@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="styles/style.css" />
+<link rel="stylesheet" href="styles/style_coverage.css" />
+{% if config.html5['use-mathjax'] %}
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">
+</script>
+{% endif %}
+<title>Formalization status</title>
+</head>
+<body>
+<h1>Formalization status</h1>
+
+<h2>What's next?</h2>
+
+{% for partial in report.partials %}
+<section>
+  {% if partial.nb_not_covered %}
+  <h3>{{ partial.title }}</h3>
+  <ul class="coverage">
+    {% for thm in partial.thm_reports %}
+    {% if not thm.lean and thm.ready %}
+    <li>
+      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
+      <div class="thm_thm_content">{{ thm.statement }}</div>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endfor %}
+
+
+<h2>Completion report</h2>
+{% for partial in report.partials %}
+<section>
+  <h3>{{ partial.title }} <span class="{{ partial.status }}">{{ partial.coverage }}%</span></h3>
+  {% if partial.nb_not_covered %}
+  <ul class="coverage">
+    {% for thm in partial.thm_reports %}
+    {% if not thm.lean %}
+    <li>
+      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
+      <div class="thm_thm_content">{{ thm.statement }}</div>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endfor %}
+</section>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/coverage.js"></script>
+</body>
+</html>

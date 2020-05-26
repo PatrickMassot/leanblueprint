@@ -1,0 +1,34 @@
+div.dep_graph {
+  width: 50%;
+  height: 100vh;
+  resize: both;
+  overflow: auto; }
+
+svg.dep_graph {
+  width: 100%;
+  height: 95%; }
+
+@media (min-width: 1024px) {
+  div.dep_graph {
+    float: left; }
+
+  div#statements {
+    width: 50%;
+    float: left; } }
+.links line {
+  stroke: #aaa; }
+
+.nodes circle {
+  pointer-events: all;
+  stroke: none; }
+
+circle.active {
+  fill: red; }
+
+circle.activehighlight {
+  stroke: red;
+  stroke-width: 3px; }
+
+circle.highlight {
+  stroke: black;
+  stroke-width: 3px; }
