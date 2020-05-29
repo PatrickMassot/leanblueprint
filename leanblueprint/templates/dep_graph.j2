@@ -1,3 +1,6 @@
+{% macro icon(icon, id='', class='') %}
+<svg  {% if id %}id="{{id}}" {% endif %}class="icon icon-{{ icon }} {{ class }}"><use xlink:href="symbol-defs.svg#icon-{{ icon }}"></use></svg>
+{% endmacro %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,6 +21,7 @@
   <script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">
   </script>
 {% endif %}
+
 </head>
 
 <body>
@@ -26,12 +30,10 @@
   <h1 id="doc_title">{{ title }}</h1>
 </header>
 <div class="content">
-<div class="dep_graph">
-    <object id="graph" type="image/svg+xml" data="test.svg"
-		style="width: 100%; height: 100%"></object>
-</div>
+    <div id="graph"></div>
 
 <div id="statements">
+<button class="closebtn">{{ icon('cross') }}</button>
 {%- for thm in graph.nodes %}
   <div class="thm" id="{{ thm.id }}" style="display: none">
     <div class="thm_thmheading">
@@ -54,46 +56,52 @@
 <script src="{{ jquery_url }}" type="text/javascript"></script>
 <!--<script src="https://d3js.org/d3.v5.min.js"></script>
 <script
-	   src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+       src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
 <script
-	src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>-->
-<script src="http://ariutta.github.io/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+    src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>-->
 <script src="js/jquery.svg.min.js"></script>
 
+<script src="js/d3.min.js"></script>
+<script src="js/hpcc.min.js"></script>
+<script src="js/d3-graphviz.js"></script>
+
 <script type="text/javascript">
-/*graph = d3.select(".dep_graph").graphviz(fit=true)
-	.renderDot(' dot.replace('\n','') ');*/
-window.onload = function() {
-pz = svgPanZoom('#graph', {
-	zoomEnabled: true,
-	controlIconsEnabled: false,
-	fit: true,
-	center: true,
-	minZoom: 0.1,
-	maxZoom: 10,
-	zoomScaleSensitivity: 1,
-	contain: true
-		  });
-obj = $('object')[0];
-svg = obj.contentDocument.documentElement
+const graphContainer = d3.select("#graph");
+const width = graphContainer.node().clientWidth;
+const height = graphContainer.node().clientHeight;
+
+graphContainer.graphviz({useWorker: true})
+    .width(width)
+    .height(height)
+    .fit(true)
+    .renderDot('{{ dot.replace('\n','') }}')
+    .on("end", interactive);
 
 clickNode = function() {
   $("#statements div").hide()
   var node_id = $('text', this).text();
-	console.log(node_id);
+    console.log(node_id);
   console.log('#'+node_id.replace(':', '\\:'));
   $('.thm').hide();
   $('#'+node_id.replace(':', '\\:')).show().children().show();
 }
+function interactive() {
 
-$('.node', svg).attr('pointer-events', 'fill')
-               .on('click', clickNode)
+    d3.selectAll('.node')
+        .attr('pointer-events', 'fill')
+        .on('click', function () {
+           var title = d3.select(this).selectAll('title').text().trim();
+           $('#statements div').hide()
+           $('.thm').hide();
+           $('#'+title.replace(':', '\\:')).show().children().show();
+           $('#statements').show()
+        });
 
-//$('.node', svg)
-/*pz.resize();
-pz.fit();
-pz.center();*/
-};
+    d3.select('.closebtn').on('click', function() {
+        console.log('click');
+        $('#statements').hide();
+    });
+}
 
 </script>
 

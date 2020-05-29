@@ -606,9 +606,9 @@
                   .filter(function(d) {
                       return d.tag[0] == '#' ? null : this;
                   })
-                    .on("end", function() {
+                    .on("end", function(d) {
                         d3.select(this)
-                            .attr('style', null);
+                            .attr('style', (d && d.attributes && d.attributes.style) || null);
                     });
             }
             var growThisPath = growEnteringEdges && tag == 'path' && data.offset;
@@ -701,6 +701,7 @@
                         } else {
                             if (graphvizInstance._zoomBehavior) {
                                 // Update the transform attribute to set with the current pan translation
+                                translateZoomBehaviorTransform.call(graphvizInstance, element);
                                 attributeValue = getTranslatedZoomTransform.call(graphvizInstance, element).toString();
                             }
                         }
@@ -921,34 +922,48 @@
         if (this._worker != null) {
             var vizURL = this._vizURL;
             var graphvizInstance = this;
-            this._worker.onmessage = function(event) {
+            this._workerPort.onmessage = function(event) {
                 var callback = graphvizInstance._workerCallbacks.shift();
-                switch (event.data.type) {
-                case "init":
-                    graphvizInstance._dispatch.call("initEnd", this);
-                    break;
-                case "done":
-                    return layoutDone.call(graphvizInstance, event.data.svg, callback);
-                case "error":
-                    if (graphvizInstance._onerror) {
-                        graphvizInstance._onerror(event.data.error);
-                    } else {
-                        throw event.data.error
-                    }
-                    break;
-                }
+                callback.call(graphvizInstance, event);
             };
             if (!vizURL.match(/^https?:\/\/|^\/\//i)) {
                 // Local URL. Prepend with local domain to be usable in web worker
                 vizURL = (new window.URL(vizURL, document.location.href)).href;
             }
-            postMessage.call(this, {dot: "", engine: 'dot', vizURL: vizURL});
+            postMessage.call(this, {dot: "", engine: 'dot', vizURL: vizURL}, function(event) {
+                switch (event.data.type) {
+                case "init":
+                    graphvizInstance._dispatch.call("initEnd", this);
+                    break;
+                }
+            });
         }
     }
 
     function postMessage(message, callback) {
         this._workerCallbacks.push(callback);
-        this._worker.postMessage(message);
+        this._workerPort.postMessage(message);
+    }
+
+    function layout(src, engine, vizOptions, callback) {
+        var worker = this._worker;
+        if (this._worker) {
+            postMessage.call(this, {
+                dot: src,
+                engine: engine,
+                options: vizOptions,
+            }, function (event) {
+                callback.call(this, event.data);
+            });
+        } else {
+            try {
+                var svgDoc = this.layoutSync(src, "svg", engine, vizOptions);
+                callback.call(this, {type: 'done', svg: svgDoc});
+            }
+            catch(error) {
+                callback.call(this, {type: 'error', error: error.message});
+            }
+        }
     }
 
     function dot(src, callback) {
@@ -964,30 +979,25 @@
         var vizOptions = {
             images: images,
         };
-        if (this._worker) {
-            postMessage.call(this, {
-                dot: src,
-                engine: engine,
-                options: vizOptions,
-            }, callback);
-        } else {
-            if (this.layoutSync == null) {
-                this._afterInit = this.dot.bind(this, src, callback);
-                return this;
-            }
-            try {
-                var svgDoc = this.layoutSync(src, "svg", engine, vizOptions);
-            }
-            catch(error) {
-                if (graphvizInstance._onerror) {
-                    graphvizInstance._onerror(error.message);
-                    return this;
-                } else {
-                    throw error.message
-                }
-            }
-            layoutDone.call(this, svgDoc, callback);
+        if (!this._worker && this.layoutSync == null) {
+            this._afterInit = this.dot.bind(this, src, callback);
+            return this;
         }
+        this.layout(src, engine, vizOptions, function (data) {
+            switch (data.type) {
+            case "error":
+                if (graphvizInstance._onerror) {
+                    graphvizInstance._onerror(data.error);
+                } else {
+                    throw data.error.message
+                }
+                break;
+            case "done":
+                var svgDoc = data.svg;
+                layoutDone.call(this, svgDoc, callback);
+                break;
+            }
+        });
 
         return this;
     }
@@ -1408,7 +1418,7 @@
         var times = {};
         var eventTypes = this._eventTypes;
         var maxEventTypeLength = Math.max(...(eventTypes.map(eventType => eventType.length)));
-        for (let i in eventTypes) {
+        for (let i = 0; i < eventTypes.length; i++) {
             let eventType = eventTypes[i];
             times[eventType] = [];
             var graphvizInstance = this;
@@ -1450,6 +1460,15 @@
                     console.log(string);
                     t0 = t;
                 } : null);
+        }
+        return this;
+    }
+
+    function destroy() {
+
+        delete this._selection.node().__graphviz__;
+        if (this._worker) {
+            this._workerPortClose();
         }
         return this;
     }
@@ -1911,45 +1930,65 @@
 
     /* istanbul ignore next */
 
-    function workerCode() {
-        self.document = {}; // Workaround for "ReferenceError: document is not defined" in hpccWasm
-        var hpccWasm;
+    function workerCodeBody(port) {
 
-        self.onmessage = function(event) {
-            if (event.data.vizURL) {
+        self.document = {}; // Workaround for "ReferenceError: document is not defined" in hpccWasm
+
+        port.addEventListener('message', function(event) {
+            let hpccWasm = self["@hpcc-js/wasm"];
+            if (hpccWasm == undefined && event.data.vizURL) {
                 importScripts(event.data.vizURL);
                 hpccWasm = self["@hpcc-js/wasm"];
-                hpccWasm.wasmFolder(event.data.vizURL.match(/.*\//));
-        // This is an alternative workaround where wasmFolder() is not needed
-        //                    document = {currentScript: {src: event.data.vizURL}};
+                hpccWasm.wasmFolder(event.data.vizURL.match(/.*\//)[0]);
+                // This is an alternative workaround where wasmFolder() is not needed
+    //                                    document = {currentScript: {src: event.data.vizURL}};
             }
             hpccWasm.graphviz.layout(event.data.dot, "svg", event.data.engine, event.data.options).then((svg) => {
                 if (svg) {
-                    self.postMessage({
+                    port.postMessage({
                         type: "done",
                         svg: svg,
                     });
                 } else if (event.data.vizURL) {
-                    self.postMessage({
+                    port.postMessage({
                         type: "init",
                     });
                 } else {
-                    self.postMessage({
+                    port.postMessage({
                         type: "skip",
                     });
                 }
             }).catch(error => {
-                self.postMessage({
+                port.postMessage({
                     type: "error",
                     error: error.message,
                 });
             });
+        });
+    }
+
+    /* istanbul ignore next */
+
+    function workerCode() {
+
+        const port = self;
+        workerCodeBody(port);
+    }
+
+    /* istanbul ignore next */
+
+    function sharedWorkerCode() {
+        self.onconnect = function(e) {
+            const port = e.ports[0];
+            workerCodeBody(port);
+            port.start();
         };
     }
 
     function Graphviz(selection, options) {
         this._options = {
             useWorker: true,
+            useSharedWorker: false,
             engine: 'dot',
             keyMode: 'title',
             fade: true,
@@ -1974,10 +2013,14 @@
             this._options.useWorker = options;
         }
         var useWorker = this._options.useWorker;
+        var useSharedWorker = this._options.useSharedWorker;
         if (typeof Worker == 'undefined') {
             useWorker = false;
         }
-        if (useWorker) {
+        if (typeof SharedWorker == 'undefined') {
+            useSharedWorker = false;
+        }
+        if (useWorker || useSharedWorker) {
             var scripts = d3.selectAll('script');
             var vizScript = scripts.filter(function() {
                 return d3.select(this).attr('type') == 'javascript/worker' || (d3.select(this).attr('src') && d3.select(this).attr('src').match(/.*\/@hpcc-js\/wasm/));
@@ -1985,18 +2028,30 @@
             if (vizScript.size() == 0) {
                 console.warn('No script tag of type "javascript/worker" was found and "useWorker" is true. Not using web worker.');
                 useWorker = false;
+                useSharedWorker = false;
             } else {
                 this._vizURL = vizScript.attr('src');
                 if (!this._vizURL) {
                     console.warn('No "src" attribute of was found on the "javascript/worker" script tag and "useWorker" is true. Not using web worker.');
                     useWorker = false;
+                    useSharedWorker = false;
                 }
             }
         }
-        if (useWorker) {
-            var blob = new Blob(['(' + workerCode.toString() + ')()']);
+        if (useSharedWorker) {
+            const url = 'data:application/javascript;base64,' + btoa(workerCodeBody.toString() + '(' + sharedWorkerCode.toString() + ')()');
+            this._worker = this._worker = new SharedWorker(url);
+            this._workerPort = this._worker.port;
+            this._workerPortClose = this._worker.port.close.bind(this._workerPort);
+            this._worker.port.start();
+            this._workerCallbacks = [];
+        }
+        else if (useWorker) {
+            var blob = new Blob([workerCodeBody.toString() + '(' + workerCode.toString() + ')()']);
             var blobURL = window.URL.createObjectURL(blob);
             this._worker = new Worker(blobURL);
+            this._workerPort = this._worker;
+            this._workerPortClose = this._worker.terminate.bind(this._worker);
             this._workerCallbacks = [];
         }
         this._selection = selection;
@@ -2057,6 +2112,7 @@
         zoomScaleExtent: zoomScaleExtent,
         zoomTranslateExtent: zoomTranslateExtent,
         render: render,
+        layout: layout,
         dot: dot,
         data: data,
         renderDot: renderDot,
@@ -2071,6 +2127,7 @@
         on: on,
         onerror: onerror,
         logEvents: logEvents,
+        destroy: destroy,
         drawEdge: drawEdge,
         updateDrawnEdge: updateDrawnEdge,
         moveDrawnEdgeEndPoint,

@@ -28,6 +28,7 @@ import os
 import string
 from pathlib import Path
 from typing import List, Optional
+from pdb import set_trace as st
 
 from jinja2 import Template
 from pygraphviz import AGraph
@@ -59,7 +60,36 @@ class DepGraph():
     def to_dot(self, shapes: dict()) -> AGraph:
         graph = AGraph(directed=True, bgcolor='#e8e8e8')
         for node in self.nodes:
-            graph.add_node(node.id, shape=shapes.get(item_kind(node), 'ellipse'))
+            stated = node.userdata.get('leanok')
+            can_state = node.userdata.get('can_state')
+            can_prove = node.userdata.get('can_prove')
+            proof = node.userdata.get('proved_by')
+            proved = proof.userdata.get('leanok', False) if proof else False
+
+            color = ''
+            fillcolor = ''
+            if stated:
+                color = 'green'
+            elif can_state:
+                color = 'blue'
+            if proved:
+                fillcolor = "#92f67c"
+            elif can_prove:
+                fillcolor = "#9acaf1"
+
+            if fillcolor:
+                graph.add_node(node.id,
+                               label=node.id.split(':')[-1],
+                               shape=shapes.get(item_kind(node), 'ellipse'),
+                               style='filled',
+                               color=color,
+                               fillcolor=fillcolor)
+            else:
+                graph.add_node(node.id,
+                               label=node.id.split(':')[-1],
+                               shape=shapes.get(item_kind(node), 'ellipse'),
+                               style='',
+                               color=color)
         for s, t in self.edges:
             graph.add_edge(s.id, t.id)
         for s, t in self.proof_edges:
@@ -96,6 +126,13 @@ class proves(Command):
                 node.setUserData('proves', proved)
                 proved.userdata['proved_by'] = node
         doc.postParseCallbacks.append(update_proved)
+
+class leanok(Command):
+    r"""\leanok"""
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        self.parentNode.userdata['leanok'] = True
+
 
 class collectproofs(Command):
     """Collects all proofs and try to link to their statement"""
@@ -135,11 +172,17 @@ class makegraph(Command):
                 #graph.nodes.update(used)
                 for thm in used:
                     graph.edges.add((thm, node))
+                node.userdata['can_state'] = all(thm.userdata.get('leanok')
+                                                 for thm in used)
                 proof = node.userdata.get('proved_by')
                 if proof:
                     used = proof.userdata.get('uses', [])
                     for thm in used:
                         graph.proof_edges.add((thm, node))
+                    node.userdata['can_prove'] = all(thm.userdata.get('leanok')
+                                                 for thm in used)
+                else:
+                    node.userdata['can_prove'] = False
 
         doc.postParseCallbacks.append(makeit)
 
@@ -263,9 +306,10 @@ def ProcessOptions(options, document):
 
     def makeDepGraph(document):
         graph = document.userdata['blueprint_dep_graph']
-        graph.to_dot({'definition': 'box'}).write('graph.dot')
+        dot = graph.to_dot({'definition': 'box'}).to_string()
         graph_tpl.stream(
                 graph=graph,
+                dot=dot,
                 context=document.context,
                 d3_url=d3_url,
                 jquery_url=jquery_url,
@@ -281,13 +325,19 @@ def ProcessOptions(options, document):
     css = PackageCss(
             renderers=['html5'],
             path=STATIC_DIR/'dep_graph.css')
-    js = PackageJs(
+    d3js = PackageJs(
+            renderers=['html5'],
+            path=STATIC_DIR/'d3.min.js')
+    hpccjs = PackageJs(
+            renderers=['html5'],
+            path=STATIC_DIR/'hpcc.min.js')
+    vizjs = PackageJs(
             renderers=['html5'],
             path=STATIC_DIR/'d3-graphviz.js')
-    js2 = PackageJs(
+    js = PackageJs(
             renderers=['html5'],
             path=STATIC_DIR/'dep_graph.js')
-    document.addPackageResource([cb, css, js, js2])
+    document.addPackageResource([cb, css, d3js, hpccjs, vizjs, js])
 
     ## Coverage
     default_tpl_path = PKG_DIR.parent/'templates'/'coverage.j2'
