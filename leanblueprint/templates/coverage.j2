@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="styles/style.css" />
+<link rel="stylesheet" href="styles/theme-blue.css" />
+<link rel="stylesheet" href="styles/stylecours.css" />
 <link rel="stylesheet" href="styles/style_coverage.css" />
 {% if config.html5['use-mathjax'] %}
 <script type="text/x-mathjax-config">
@@ -14,30 +16,17 @@
 {% endif %}
 <title>Formalization status</title>
 </head>
+
 <body>
-<h1>Formalization status</h1>
+<div class="wrapper">
+<header>
+  <h1 id="doc_title">Formalization status</h1>
+</header>
 
-<h2>What's next?</h2>
-
-{% for partial in report.partials %}
-<section>
-  {% if partial.nb_not_covered %}
-  <h3>{{ partial.title }}</h3>
-  <ul class="coverage">
-    {% for thm in partial.thm_reports %}
-    {% if not thm.lean and thm.ready %}
-    <li>
-      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
-      <div class="thm_thm_content">{{ thm.statement }}</div>
-    </li>
-    {% endif %}
-    {% endfor %}
-  </ul>
-  {% endif %}
-{% endfor %}
-
+<div class="content">
 
 <h2>Completion report</h2>
+
 {% for partial in report.partials %}
 <section>
   <h3>{{ partial.title }} <span class="{{ partial.status }}">{{ partial.coverage }}%</span></h3>
@@ -53,8 +42,70 @@
     {% endfor %}
   </ul>
   {% endif %}
-{% endfor %}
 </section>
+{% endfor %}
+
+<h2>What to define next?</h2>
+
+{% for partial in report.partials %}
+<section>
+  {% if partial.nb_not_covered %}
+  <h3>{{ partial.title }}</h3>
+  <ul class="coverage">
+    {% for thm in partial.thm_reports %}
+    {% if thm.kind == 'definition' and not thm.leanok and thm.can_state %}
+    <li>
+      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
+      <div class="thm_thm_content">{{ thm.statement }}</div>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endfor %}
+
+<h2>What to state next?</h2>
+
+{% for partial in report.partials %}
+<section>
+  {% if partial.nb_not_covered %}
+  <h3>{{ partial.title }}</h3>
+  <ul class="coverage">
+    {% for thm in partial.thm_reports %}
+    {% if not thm.leanok and thm.can_state %}
+    <li>
+      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
+      <div class="thm_thm_content">{{ thm.statement }}</div>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endfor %}
+
+<h2>What to prove next?</h2>
+
+{% for partial in report.partials %}
+<section>
+  {% if partial.nb_not_covered %}
+  <h3>{{ partial.title }}</h3>
+  <ul class="coverage">
+    {% for thm in partial.thm_reports %}
+    {% if thm.leanok and not thm.proved and thm.can_prove %}
+    <li>
+      <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
+      <div class="thm_thm_content">{{ thm.statement }}</div>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endfor %}
+
+</div>
 <script type="text/javascript" src="js/jquery.min.js"></script>
 <script type="text/javascript" src="js/coverage.js"></script>
 </body>

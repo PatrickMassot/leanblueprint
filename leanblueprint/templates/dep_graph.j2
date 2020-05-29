@@ -1,6 +1,14 @@
 {% macro icon(icon, id='', class='') %}
 <svg  {% if id %}id="{{id}}" {% endif %}class="icon icon-{{ icon }} {{ class }}"><use xlink:href="symbol-defs.svg#icon-{{ icon }}"></use></svg>
 {% endmacro %}
+{% macro modal(id) %}
+    <div class="dep-modal-container" id="{{ id }}">
+      <div class="dep-modal-content">
+          <button class="dep-closebtn">{{ icon('cross') }}</button>
+        {{ caller() }}
+      </div>
+    </div>
+{% endmacro %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -33,10 +41,12 @@
     <div id="graph"></div>
 
 <div id="statements">
-<button class="closebtn">{{ icon('cross') }}</button>
 {%- for thm in graph.nodes %}
+
+    {% call modal(thm.id) %}
   <div class="thm" id="{{ thm.id }}" style="display: none">
     <div class="thm_thmheading">
+      <a href="{{ thm.url }}">
       <span class="{{ thm.thmName }}_thmcaption">
       {{ thm.caption }}
       </span>
@@ -46,9 +56,11 @@
       {% if thm.title -%}
       <span class="{{thm.thmName}}_thmtitle">{{ thm.title }}</span>
       {%- endif -%}
+      </a>
     </div>
     <div class="thm_thmcontent">{{ thm }}</div>
   </div>
+    {% endcall %}
 {%- endfor -%}
 </div>
 </div> <!-- content -->
@@ -97,9 +109,12 @@ function interactive() {
            $('#statements').show()
         });
 
-    d3.select('.closebtn').on('click', function() {
-        console.log('click');
-        $('#statements').hide();
+    d3.selectAll('.dep-closebtn').on('click', function() {
+        console.log(this);
+        console.log(d3.select(this));
+        var modal =
+            d3.select(this).node().parentNode.parentNode.parentNode ;
+        d3.select(modal).style('display', 'none');
     });
 }
 

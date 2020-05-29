@@ -91,9 +91,9 @@ class DepGraph():
                                style='',
                                color=color)
         for s, t in self.edges:
-            graph.add_edge(s.id, t.id)
-        for s, t in self.proof_edges:
             graph.add_edge(s.id, t.id, style='dashed')
+        for s, t in self.proof_edges:
+            graph.add_edge(s.id, t.id)
         return graph
 
 class uses(Command):
@@ -198,30 +198,38 @@ class lean(Command):
 class ThmReport():
     """"""
 
-    def __init__(self, id_, caption: str, statement: str, lean: List[str],
-            uses: List[str], ready: bool):
+    def __init__(self, id_, kind: str, caption: str, statement: str, lean: List[str],
+            stated: bool, proved: bool,
+            can_state: bool, can_prove: bool):
         """Constructor for ThmReport"""
         self.id = id_
         self.caption = caption
+        self.kind = kind
         self.statement = statement
         self.lean = lean
-        self.uses = uses
-        self.ready = ready
+        self.stated = stated
+        self.proved = proved
+        self.can_state = can_state
+        self.can_prove = can_prove
 
     @classmethod
     def from_thm(cls, thm):
         caption = thm.caption + ' ' + thm.ref
-        uses = thm.userdata.get('uses', [])
-        ready = all(prelim.userdata.get('lean') for prelim in uses)
-        return cls(thm.id, caption, str(thm), thm.userdata.get('lean', []),
-                uses, ready)
+        stated = thm.userdata.get('leanok', False)
+        can_state = thm.userdata.get('can_state', False)
+        can_prove = thm.userdata.get('can_prove', False)
+        proof = thm.userdata.get('proved_by')
+        proved = proof.userdata.get('leanok', False) if proof else False
+        return cls(thm.id, thm.thmName,
+                caption, str(thm), thm.userdata.get('lean', []),
+                stated, proved, can_state, can_prove)
 
 
 class PartialReport():
     def __init__(self, title, nb_thms, nb_not_covered, thm_reports):
         self.nb_thms = nb_thms
         self.nb_not_covered = nb_not_covered
-        self.coverage = 100 * (nb_thms - nb_not_covered) / nb_thms if nb_thms else 100
+        self.coverage = int(100 * (nb_thms - nb_not_covered) / nb_thms if nb_thms else 100)
         self.thm_reports = thm_reports
         self.title = title
         if self.coverage == 100:
@@ -242,7 +250,7 @@ class PartialReport():
         for thm in sorted(theorems, key=lambda x: str(x.ref).split('.')):
             nb_thms += 1
             thm_report = ThmReport.from_thm(thm)
-            if not thm_report.lean:
+            if not thm_report.proved:
                 nb_not_covered += 1
             thm_reports.append(thm_report)
         return cls(section.fullTocEntry, nb_thms, nb_not_covered, thm_reports)
@@ -354,7 +362,7 @@ def ProcessOptions(options, document):
 
     thm_types = [thm.strip()
             for thm in options.get('coverage_thms',
-                'definition+lemma+proposition+theorem').split('+')]
+                'definition+lemma+proposition+theorem+corollary').split('+')]
     document.userdata['thm_types'] = thm_types
     section = options.get('coverage_sectioning', 'chapter')
 

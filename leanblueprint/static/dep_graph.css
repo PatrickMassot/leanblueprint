@@ -13,19 +13,16 @@ div#statements {
   background-color: #e8e8e8; /* FIXME: use sass */
 }
 
-button.closebtn
+button.dep-closebtn
 {
     position: absolute;
-    top: 0;
-    right: 5rem;
+    top: 1rem;
+    right: 1rem;
     font-size: 100%;
     font-weight: bold;
 
     background: Transparent;
     border: none;
-
-    margin: auto 0;
-    padding-right: .3rem;
 
     text-decoration: none;
 
@@ -33,16 +30,42 @@ button.closebtn
     cursor: pointer;
 }
 
-.links line {
-  stroke: #aaa; }
+div.dep-modal-container {
+  position: fixed;
+  z-index: $modal-z-index;
+  top: 0;
+  left: 0;
 
-circle.active {
-  fill: red; }
+  display: none;
 
-circle.activehighlight {
-  stroke: red;
-  stroke-width: 3px; }
+  width: 90vw;
+  margin-top: 4rem;
+  margin-left: 5vw;
+  margin-right: 5vw;
+}
+div.dep-modal-content {
+  font-weight: normal;
 
-circle.highlight {
-  stroke: black;
-  stroke-width: 3px; }
+  overflow: auto;
+
+  margin: auto;
+
+  vertical-align: middle;
+
+  border: 1px solid #497da5; /* FIXME use sass, compare main modals */
+  border-radius: 5px;
+  background-color: white;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
+  padding: 1rem;
+}
+
+div.dep-modal-content a {
+  color: inherit;
+  text-decoration: none;
+}
+
+div.thm_icons .icon {
+    width: .7rem;
+    height: .7rem;
+}
+
