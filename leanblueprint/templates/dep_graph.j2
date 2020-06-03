@@ -39,7 +39,15 @@
 </header>
 <div class="content">
     <div id="graph"></div>
-
+<div id="Legend">
+<span class="title">Legend:</span>
+<dl>
+<dt>Boxes</dt><dd>definitions</dd>
+<dt>Ellipses</dt><dd>theorems </dd>
+<dt>Blue</dt><dd>ready</dd>
+<dt>Green</dt><dd>done</dd>
+</dl>
+</div>
 <div id="statements">
 {%- for thm in graph.nodes %}
 

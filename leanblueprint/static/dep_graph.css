@@ -1,6 +1,6 @@
 div#graph {
   width: 100%;
-  height: 100vh;
+  height: 90vh;
   resize: both;
   overflow: hidden; }
 
@@ -11,6 +11,33 @@ div#statements {
   bottom: 0;
   width: 100%;
   background-color: #e8e8e8; /* FIXME: use sass */
+}
+
+#Legend span.title {
+    font-size: 150%;
+    font-weight: bold;
+	display: inline;
+	margin-right: 2rem;
+}
+
+#Legend dl {
+    font-size: 120%;
+	display: inline;
+}
+
+#Legend dt {
+    font-weight: bold;
+	display: inline;
+}
+
+#Legend dt::after {
+ content: ":";
+}
+
+#Legend dd {
+	margin-left: .5rem;
+	margin-right: 1rem;
+	display: inline;
 }
 
 button.dep-closebtn
