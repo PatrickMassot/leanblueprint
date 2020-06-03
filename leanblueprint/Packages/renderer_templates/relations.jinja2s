@@ -89,4 +89,5 @@ name: proof
   </div>
 </div>
 
-name: covers uses proves
+name: covers uses proves leanok lean collectproofs makegraph
+
