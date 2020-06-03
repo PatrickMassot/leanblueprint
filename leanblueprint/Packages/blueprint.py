@@ -59,6 +59,7 @@ class DepGraph():
 
     def to_dot(self, shapes: dict()) -> AGraph:
         graph = AGraph(directed=True, bgcolor='#e8e8e8')
+        graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
             stated = node.userdata.get('leanok')
             can_state = node.userdata.get('can_state')

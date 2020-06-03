@@ -38,16 +38,16 @@
   <h1 id="doc_title">{{ title }}</h1>
 </header>
 <div class="content">
+	<div id="Legend">
+		<span class="title">Legend:</span>
+		<dl>
+			<dt>Boxes</dt><dd>definitions</dd>
+			<dt>Ellipses</dt><dd>theorems </dd>
+			<dt>Blue</dt><dd>ready</dd>
+			<dt>Green</dt><dd>done</dd>
+		</dl>
+	</div>
     <div id="graph"></div>
-<div id="Legend">
-<span class="title">Legend:</span>
-<dl>
-<dt>Boxes</dt><dd>definitions</dd>
-<dt>Ellipses</dt><dd>theorems </dd>
-<dt>Blue</dt><dd>ready</dd>
-<dt>Green</dt><dd>done</dd>
-</dl>
-</div>
 <div id="statements">
 {%- for thm in graph.nodes %}
 
@@ -111,7 +111,7 @@ function interactive() {
         .attr('pointer-events', 'fill')
         .on('click', function () {
            var title = d3.select(this).selectAll('title').text().trim();
-           $('#statements div').hide()
+           $('#statements > div').hide()
            $('.thm').hide();
            $('#'+title.replace(':', '\\:')).show().children().show();
            $('#statements').show()
