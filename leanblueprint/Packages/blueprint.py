@@ -193,7 +193,11 @@ class lean(Command):
 
     def digest(self, tokens):
         Command.digest(self, tokens)
-        self.parentNode.setUserData('lean', self.attributes['decls'])
+        decl, url = self.attributes['decls']
+
+        decls = self.parentNode.userdata.get('leandecls', [])
+        decls.append((decl, url))
+        self.parentNode.setUserData('leandecls', decls)
 
 
 class ThmReport():
