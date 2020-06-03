@@ -255,7 +255,10 @@ class PartialReport():
         for thm in sorted(theorems, key=lambda x: str(x.ref).split('.')):
             nb_thms += 1
             thm_report = ThmReport.from_thm(thm)
-            if not thm_report.proved:
+            if thm_report.kind == 'definition':
+                if not thm_report.stated:
+                  nb_not_covered += 1
+            elif not thm_report.proved:
                 nb_not_covered += 1
             thm_reports.append(thm_report)
         return cls(section.fullTocEntry, nb_thms, nb_not_covered, thm_reports)
