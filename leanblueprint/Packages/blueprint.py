@@ -350,10 +350,7 @@ def ProcessOptions(options, document):
     vizjs = PackageJs(
             renderers=['html5'],
             path=STATIC_DIR/'d3-graphviz.js')
-    js = PackageJs(
-            renderers=['html5'],
-            path=STATIC_DIR/'dep_graph.js')
-    document.addPackageResource([cb, css, d3js, hpccjs, vizjs, js])
+    document.addPackageResource([cb, css, d3js, hpccjs, vizjs])
 
     ## Coverage
     default_tpl_path = PKG_DIR.parent/'templates'/'coverage.j2'
