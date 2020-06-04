@@ -69,12 +69,18 @@
   {% endif %}
  </li>
  {% endfor %}
+  <li></li>	
   <li>	
   <a href="dep_graph.html">Dependency graph</a>
   </li>
   <li>	
   <a href="coverage.html">Progess report</a>
   </li>
+  {% if 'project_home' in obj.ownerDocument.userdata %}
+  <li>	
+  <a href="{{ obj.ownerDocument.userdata['project_home'] }}">Project home</a>
+  </li>
+  {% endif %}
 </ul>
 </nav>
 {% endif %}

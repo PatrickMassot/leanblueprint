@@ -59,6 +59,7 @@ class DepGraph():
 
     def to_dot(self, shapes: dict()) -> AGraph:
         graph = AGraph(directed=True, bgcolor='#e8e8e8')
+        graph.node_attr['penwidth'] = 1.5
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
             stated = node.userdata.get('leanok')
@@ -96,6 +97,15 @@ class DepGraph():
         for s, t in self.proof_edges:
             graph.add_edge(s.id, t.id)
         return graph
+
+class home(Command):
+    r"""\home{url}"""
+    args = 'url:url'
+
+    def invoke(self, tex):
+        Command.invoke(self, tex)
+        self.ownerDocument.userdata['project_home'] = self.attributes['url']
+        return []
 
 class uses(Command):
     r"""\uses{labels list}"""

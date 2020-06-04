@@ -1,3 +1,17 @@
+header {
+  height: 3rem;
+}
+
+header a {
+  margin-right: auto;
+  text-decoration: none;
+  color: white;
+}
+
+header h1 {
+  position: absolute;
+}
+
 section h2 {
   margin: .5rem;
   cursor : pointer;

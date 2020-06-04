@@ -28,6 +28,7 @@ name: thmenv
     ✓
     {% endif %}
     <div class="thm_icons">
+    <a class="icon proof" href="{{ obj.url }}">#</a>
     {% if obj.userdata.proved_by %}
     <a class="icon proof" href="{{ obj.userdata.proved_by.url }}">{{ icon('cogs') }}</a>
     {% endif %}
