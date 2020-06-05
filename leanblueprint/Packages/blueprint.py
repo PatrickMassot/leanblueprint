@@ -62,6 +62,7 @@ class DepGraph():
         graph.node_attr['penwidth'] = 1.5
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
+            mathlibok = node.userdata.get('mathlibok')
             stated = node.userdata.get('leanok')
             can_state = node.userdata.get('can_state')
             can_prove = node.userdata.get('can_prove')
@@ -70,7 +71,9 @@ class DepGraph():
 
             color = ''
             fillcolor = ''
-            if stated:
+            if mathlibok:
+                color = 'darkgreen'
+            elif stated:
                 color = 'green'
             elif can_state:
                 color = 'blue'
@@ -98,6 +101,7 @@ class DepGraph():
             graph.add_edge(s.id, t.id)
         return graph
 
+
 class home(Command):
     r"""\home{url}"""
     args = 'url:url'
@@ -106,6 +110,7 @@ class home(Command):
         Command.invoke(self, tex)
         self.ownerDocument.userdata['project_home'] = self.attributes['url']
         return []
+
 
 class uses(Command):
     r"""\uses{labels list}"""
@@ -121,6 +126,7 @@ class uses(Command):
             node.setUserData('uses', used)
 
         doc.postParseCallbacks.append(update_used)
+
 
 class proves(Command):
     r"""\proves{label}"""
@@ -138,11 +144,20 @@ class proves(Command):
                 proved.userdata['proved_by'] = node
         doc.postParseCallbacks.append(update_proved)
 
+
 class leanok(Command):
     r"""\leanok"""
     def digest(self, tokens):
         Command.digest(self, tokens)
         self.parentNode.userdata['leanok'] = True
+
+
+class mathlibok(Command):
+    r"""\mathlibok"""
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        self.parentNode.userdata['leanok'] = True
+        self.parentNode.userdata['mathlibok'] = True
 
 
 class collectproofs(Command):
