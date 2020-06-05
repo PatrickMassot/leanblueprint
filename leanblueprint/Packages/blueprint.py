@@ -1,18 +1,12 @@
 """
-Package blueprint
-Goodies for theorem environment and sample specific plasTeX package.
+Package Lean blueprint
 
 Options:
-dep_graph: produce dependency graph
-
-d3_url: url for the D3js library
 jquery_url: url for the jquery library
 dep_graph_target: dependency graph output file (relative to global output
 directory)
 dep_graph_tpl: template file for dependency graph, relative to the current
 directory
-
-coverage: produce coverage report
 
 coverage_tpl: template file for coverage report, relative to the current
 directory
@@ -219,7 +213,6 @@ class lean(Command):
     def digest(self, tokens):
         Command.digest(self, tokens)
         decl, url = self.attributes['decls']
-
         decls = self.parentNode.userdata.get('leandecls', [])
         decls.append((decl, url))
         self.parentNode.setUserData('leandecls', decls)
@@ -317,18 +310,12 @@ def ProcessOptions(options, document):
 
     document.rendererdata.setdefault('html5', dict())
 
-    package_option = document.context.packages['blueprint'] = {}
-    templatedir = PackageTemplateDir(
-            renderers=['html5'],
-            path=PKG_DIR/'renderer_templates')
-
+    templatedir = PackageTemplateDir(path=PKG_DIR/'renderer_templates')
     document.addPackageResource(templatedir)
 
     jobname = document.userdata['jobname']
     outdir = document.config['files']['directory']
     outdir = string.Template(outdir).substitute({'jobname': jobname})
-
-    package_option['links'] = 'usage_links' in options
 
     ## Dep graph
     d3_url = options.get('d3_url', 'https://d3js.org/d3.v5.min.js')
@@ -337,7 +324,7 @@ def ProcessOptions(options, document):
     document.userdata['blueprint_dep_graph'] = DepGraph()
     graph_target = options.get( 'dep_graph_target', 'dep_graph.html')
 
-    default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.j2'
+    default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
     graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
     try:
         graph_tpl = Template(graph_tpl_path.read_text())
@@ -358,27 +345,17 @@ def ProcessOptions(options, document):
                 config=document.config).dump(graph_target)
         return [graph_target]
 
-    cb = PackagePreCleanupCB(
-            renderers=['html5'],
-            data=makeDepGraph)
-    # FIXME: All those resources are included in all pages. Need a flag in
-    # PackageResource to copy only without adding to the rendererdata
-    css = PackageCss(
-            renderers=['html5'],
-            path=STATIC_DIR/'dep_graph.css')
-    d3js = PackageJs(
-            renderers=['html5'],
-            path=STATIC_DIR/'d3.min.js')
-    hpccjs = PackageJs(
-            renderers=['html5'],
-            path=STATIC_DIR/'hpcc.min.js')
-    vizjs = PackageJs(
-            renderers=['html5'],
-            path=STATIC_DIR/'d3-graphviz.js')
-    document.addPackageResource([cb, css, d3js, hpccjs, vizjs])
+    cb = PackagePreCleanupCB(data=makeDepGraph)
+    css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
+    css2 = PackageCss(path=STATIC_DIR/'style_coverage.css')
+    js = [PackageJs(path=STATIC_DIR/name, copy_only=True)
+          for name in ['d3.min.js', 'hpcc.min.js', 'd3-graphviz.js',
+                       'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]
+
+    document.addPackageResource([cb, css, css2] + js)
 
     ## Coverage
-    default_tpl_path = PKG_DIR.parent/'templates'/'coverage.j2'
+    default_tpl_path = PKG_DIR.parent/'templates'/'coverage.html'
     cov_tpl_path = options.get( 'coverage_tpl', default_tpl_path)
     try:
         cov_tpl = Template(cov_tpl_path.read_text())
@@ -404,17 +381,8 @@ def ProcessOptions(options, document):
                 config=document.config,
                 terms=document.context.terms).dump(outfile)
         return [outfile]
+    document.addPackageResource(PackagePreCleanupCB(data=makeCoverageReport))
 
-    cb = PackagePreCleanupCB(
-            renderers=['html5'],
-            data=makeCoverageReport)
-    css = PackageCss(
-            renderers=['html5'],
-            path=STATIC_DIR/'style_coverage.css')
-    js = PackageJs(
-            renderers=['html5'],
-            path=STATIC_DIR/'coverage.js')
-    document.addPackageResource([cb, css, js])
 
     if 'showmore' in options:
         navs = [{'icon': 'eye-minus', 'id': 'showmore-minus', 'class': 'showmore'},
@@ -424,13 +392,7 @@ def ProcessOptions(options, document):
         else:
             document.rendererdata['html5']['extra-nav'] = navs
 
-        css = PackageCss(
-                renderers=['html5'],
-                path=STATIC_DIR/'showmore.css')
-        js = PackageJs(
-                renderers=['html5'],
-                path=STATIC_DIR/'showmore.js')
-        js2 = PackageJs(
-                renderers=['html5'],
-                path=STATIC_DIR/'jquery.cookie.js')
+        css = PackageCss(path=STATIC_DIR/'showmore.css')
+        js = PackageJs(path=STATIC_DIR/'showmore.js')
+        js2 = PackageJs(path=STATIC_DIR/'jquery.cookie.js')
         document.addPackageResource([css, js, js2])
