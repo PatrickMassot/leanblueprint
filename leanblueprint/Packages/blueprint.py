@@ -22,12 +22,11 @@ import os
 import string
 from pathlib import Path
 from typing import List, Optional
-from pdb import set_trace as st
 
 from jinja2 import Template
 from pygraphviz import AGraph
 
-from plasTeX import Command, Environment, TeXDocument
+from plasTeX import Command, Environment
 from plasTeX.PackageResource import (
         PackageTemplateDir, PackageJs, PackageCss, PackagePreCleanupCB)
 
@@ -36,27 +35,34 @@ log = getLogger()
 
 PKG_DIR = Path(__file__).parent
 STATIC_DIR = Path(__file__).parent.parent/'static'
+DEFAULT_TYPES = 'definition+lemma+proposition+theorem+corollary'
 
 def item_kind(node) -> str:
+    """Return the kind of declaration corresponding to node"""
     if hasattr(node, 'thmName'):
         return node.thmName
-    elif node.parentNode:
+    if node.parentNode:
         return item_kind(node.parentNode)
-    else:
-        return ''
+    return ''
 
 class DepGraph():
+    """
+    A TeX declarations dependency graph.
+    Contrasting with leancrawler dependencies graph,
+    each node and edge is human declarated in the TeX source.
+    """
     def __init__(self):
         self.nodes = set()
         self.edges = set()
         self.proof_edges = set()
 
     def to_dot(self, shapes: dict()) -> AGraph:
+        """Convert to pygraphviz AGraph"""
         graph = AGraph(directed=True, bgcolor='#e8e8e8')
         graph.node_attr['penwidth'] = 1.5
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
-            mathlibok = node.userdata.get('mathlibok')
+            mathlib = node.userdata.get('mathlibok')
             stated = node.userdata.get('leanok')
             can_state = node.userdata.get('can_state')
             can_prove = node.userdata.get('can_prove')
@@ -65,7 +71,7 @@ class DepGraph():
 
             color = ''
             fillcolor = ''
-            if mathlibok:
+            if mathlib:
                 color = 'darkgreen'
             elif stated:
                 color = 'green'
@@ -73,7 +79,7 @@ class DepGraph():
                 color = 'blue'
             if proved:
                 fillcolor = "#92f67c"
-            elif can_prove:
+            elif can_prove and (can_state or stated):
                 fillcolor = "#9acaf1"
 
             if fillcolor:
@@ -116,10 +122,11 @@ class uses(Command):
         doc = self.ownerDocument
         def update_used():
             labels_dict = doc.context.labels
-            used = [labels_dict[label] for label in self.attributes['labels'] if label in labels_dict]
+            used = [labels_dict[label]
+                    for label in self.attributes['labels'] if label in labels_dict]
             node.setUserData('uses', used)
 
-        doc.postParseCallbacks.append(update_used)
+        doc.addPostParseCallbacks(10, update_used)
 
 
 class proves(Command):
@@ -136,7 +143,7 @@ class proves(Command):
             if proved:
                 node.setUserData('proves', proved)
                 proved.userdata['proved_by'] = node
-        doc.postParseCallbacks.append(update_proved)
+        doc.addPostParseCallbacks(10, update_proved)
 
 
 class leanok(Command):
@@ -154,58 +161,6 @@ class mathlibok(Command):
         self.parentNode.userdata['mathlibok'] = True
 
 
-class collectproofs(Command):
-    """Collects all proofs and try to link to their statement"""
-    # FIXME: We define a command here because we are missing a hook
-    # to call a function after everything is parsed but before rendering
-    # This command should be at the end of the document
-    # Could we hook that into AtDocumentEnd?
-
-    def digest(self, tokens):
-        Command.digest(self, tokens)
-        doc = self.ownerDocument
-        def update_proofs() -> None:
-            for proof in doc.getElementsByTagName('proof'):
-                proved = proof.userdata.setdefault('proves', find_proved_thm(proof))
-                if proved:
-                    proved.userdata['proved_by'] = proof
-        doc.postParseCallbacks.append(update_proofs)
-
-class makegraph(Command):
-    """Make the dep graph"""
-    # FIXME: We define a command here because we are missing a hook
-    # to call a function after everything is parsed but before rendering
-    # This command should be at the end of the document
-    # Could we hook that into AtDocumentEnd?
-
-    def digest(self, tokens):
-        Command.digest(self, tokens)
-        doc = self.ownerDocument
-        def makeit() -> None:
-            nodes = []
-            for thm_type in doc.userdata['thm_types']:
-                nodes += doc.getElementsByTagName(thm_type)
-            graph = doc.userdata.get('blueprint_dep_graph')
-            for node in nodes:
-                graph.nodes.add(node)
-                used = node.userdata.get('uses', [])
-                #graph.nodes.update(used)
-                for thm in used:
-                    graph.edges.add((thm, node))
-                node.userdata['can_state'] = all(thm.userdata.get('leanok')
-                                                 for thm in used)
-                proof = node.userdata.get('proved_by')
-                if proof:
-                    used = proof.userdata.get('uses', [])
-                    for thm in used:
-                        graph.proof_edges.add((thm, node))
-                    node.userdata['can_prove'] = all(thm.userdata.get('leanok')
-                                                 for thm in used)
-                else:
-                    node.userdata['can_prove'] = False
-
-        doc.postParseCallbacks.append(makeit)
-
 class lean(Command):
     r"""\lean{decl list} """
     args = 'decls:list:nox'
@@ -218,18 +173,20 @@ class lean(Command):
         self.parentNode.setUserData('leandecls', decls)
 
 
-class ThmReport():
-    """"""
+class DeclReport():
+    """
+    A declaration formalization report
+    """
 
-    def __init__(self, id_, kind: str, caption: str, statement: str, lean: List[str],
-            stated: bool, proved: bool,
-            can_state: bool, can_prove: bool):
-        """Constructor for ThmReport"""
+    def __init__(self, id_, kind: str, caption: str, statement: str, leanl: List[str],
+                 stated: bool, proved: bool,
+                 can_state: bool, can_prove: bool):
+        """Constructor for DeclReport"""
         self.id = id_
         self.caption = caption
         self.kind = kind
         self.statement = statement
-        self.lean = lean
+        self.lean = leanl
         self.stated = stated
         self.proved = proved
         self.can_state = can_state
@@ -237,6 +194,7 @@ class ThmReport():
 
     @classmethod
     def from_thm(cls, thm):
+        """Create a DeclReport from a thmenv node"""
         caption = thm.caption + ' ' + thm.ref
         stated = thm.userdata.get('leanok', False)
         can_state = thm.userdata.get('can_state', False)
@@ -244,11 +202,12 @@ class ThmReport():
         proof = thm.userdata.get('proved_by')
         proved = proof.userdata.get('leanok', False) if proof else False
         return cls(thm.id, thm.thmName,
-                caption, str(thm), thm.userdata.get('lean', []),
-                stated, proved, can_state, can_prove)
+                   caption, str(thm), thm.userdata.get('lean', []),
+                   stated, proved, can_state, can_prove)
 
 
 class PartialReport():
+    """Report on formalization status for part of a blueprint."""
     def __init__(self, title, nb_thms, nb_not_covered, thm_reports):
         self.nb_thms = nb_thms
         self.nb_not_covered = nb_not_covered
@@ -264,6 +223,7 @@ class PartialReport():
 
     @classmethod
     def from_section(cls, section, thm_types):
+        """Create a PartialReport from a document section."""
         nb_thms = 0
         nb_not_covered = 0
         thm_reports = []
@@ -272,10 +232,10 @@ class PartialReport():
             theorems += section.getElementsByTagName(thm_type)
         for thm in sorted(theorems, key=lambda x: str(x.ref).split('.')):
             nb_thms += 1
-            thm_report = ThmReport.from_thm(thm)
+            thm_report = DeclReport.from_thm(thm)
             if thm_report.kind == 'definition':
                 if not thm_report.stated:
-                  nb_not_covered += 1
+                    nb_not_covered += 1
             elif not thm_report.proved:
                 nb_not_covered += 1
             thm_reports.append(thm_report)
@@ -290,7 +250,8 @@ class Report():
         self.partials = partials
         self.nb_thms = sum([p.nb_thms for p in partials])
         self.nb_not_covered = sum([p.nb_not_covered for p in partials])
-        self.coverage = 100 * (self.nb_thms - self.nb_not_covered) / self.nb_thms if self.nb_thms else 100
+        self.coverage = 100 * (self.nb_thms - self.nb_not_covered) / self.nb_thms \
+                        if self.nb_thms else 100
 
 def find_proved_thm(proof) -> Optional[Environment]:
     """From a proof node, try to find the statement."""
@@ -301,8 +262,6 @@ def find_proved_thm(proof) -> Optional[Environment]:
             return childNodes[0]
         node = node.previousSibling
     return None
-
-
 
 
 def ProcessOptions(options, document):
@@ -317,12 +276,19 @@ def ProcessOptions(options, document):
     outdir = document.config['files']['directory']
     outdir = string.Template(outdir).substitute({'jobname': jobname})
 
+    def update_proofs() -> None:
+        for proof in document.getElementsByTagName('proof'):
+            proved = proof.userdata.setdefault('proves', find_proved_thm(proof))
+            if proved:
+                proved.userdata['proved_by'] = proof
+    document.addPostParseCallbacks(100, update_proofs)
+
     ## Dep graph
     d3_url = options.get('d3_url', 'https://d3js.org/d3.v5.min.js')
     jquery_url = options.get('jquery_url', 'http://code.jquery.com/jquery.min.js')
     title = options.get('title', 'Dependencies')
     document.userdata['blueprint_dep_graph'] = DepGraph()
-    graph_target = options.get( 'dep_graph_target', 'dep_graph.html')
+    graph_target = options.get('dep_graph_target', 'dep_graph.html')
 
     default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
     graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
@@ -335,14 +301,13 @@ def ProcessOptions(options, document):
     def makeDepGraph(document):
         graph = document.userdata['blueprint_dep_graph']
         dot = graph.to_dot({'definition': 'box'}).to_string()
-        graph_tpl.stream(
-                graph=graph,
-                dot=dot,
-                context=document.context,
-                d3_url=d3_url,
-                jquery_url=jquery_url,
-                title=title,
-                config=document.config).dump(graph_target)
+        graph_tpl.stream(graph=graph,
+                         dot=dot,
+                         context=document.context,
+                         d3_url=d3_url,
+                         jquery_url=jquery_url,
+                         title=title,
+                         config=document.config).dump(graph_target)
         return [graph_target]
 
     cb = PackagePreCleanupCB(data=makeDepGraph)
@@ -353,10 +318,34 @@ def ProcessOptions(options, document):
                        'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]
 
     document.addPackageResource([cb, css, css2] + js)
+    def makegraph() -> None:
+        nodes = []
+        for thm_type in document.userdata['thm_types']:
+            nodes += document.getElementsByTagName(thm_type)
+        graph = document.userdata.get('blueprint_dep_graph')
+        for node in nodes:
+            graph.nodes.add(node)
+            used = node.userdata.get('uses', [])
+            #graph.nodes.update(used)
+            for thm in used:
+                graph.edges.add((thm, node))
+            node.userdata['can_state'] = all(thm.userdata.get('leanok')
+                                             for thm in used)
+            proof = node.userdata.get('proved_by')
+            if proof:
+                used = proof.userdata.get('uses', [])
+                for thm in used:
+                    graph.proof_edges.add((thm, node))
+                node.userdata['can_prove'] = all(thm.userdata.get('leanok')
+                                                 for thm in used)
+            else:
+                node.userdata['can_prove'] = False
+
+    document.addPostParseCallbacks(110, makegraph)
 
     ## Coverage
     default_tpl_path = PKG_DIR.parent/'templates'/'coverage.html'
-    cov_tpl_path = options.get( 'coverage_tpl', default_tpl_path)
+    cov_tpl_path = options.get('coverage_tpl', default_tpl_path)
     try:
         cov_tpl = Template(cov_tpl_path.read_text())
     except IOError:
@@ -364,22 +353,20 @@ def ProcessOptions(options, document):
         cov_tpl = Template(default_tpl_path.read_text())
 
 
-    coverage_target = options.get( 'coverage_target', 'coverage.html')
+    coverage_target = options.get('coverage_target', 'coverage.html')
     outfile = os.path.join(outdir, coverage_target)
 
     thm_types = [thm.strip()
-            for thm in options.get('coverage_thms',
-                'definition+lemma+proposition+theorem+corollary').split('+')]
+                 for thm in options.get('coverage_thms', DEFAULT_TYPES).split('+')]
     document.userdata['thm_types'] = thm_types
     section = options.get('coverage_sectioning', 'chapter')
 
     def makeCoverageReport(document):
         sections = document.getElementsByTagName(section)
         report = Report([PartialReport.from_section(sec, thm_types) for sec in sections])
-        cov_tpl.stream(
-                report=report,
-                config=document.config,
-                terms=document.context.terms).dump(outfile)
+        cov_tpl.stream(report=report,
+                       config=document.config,
+                       terms=document.context.terms).dump(outfile)
         return [outfile]
     document.addPackageResource(PackagePreCleanupCB(data=makeCoverageReport))
 
