@@ -46,7 +46,7 @@ name: thmenv
     <button class="modal lean">L∃∀N</button>
     {% call modal('Lean declarations') %}
         <ul class="uses">
-          {% for lean, url in obj.userdata.leandecls %}
+          {% for lean, url in obj.userdata.lean_urls %}
           <li><a href="{{ url }}">{{ lean }}</a></li>
           {% endfor %}
         </ul>

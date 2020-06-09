@@ -2,7 +2,7 @@
 Package Lean blueprint
 
 Options:
-jquery_url: url for the jquery library
+project: lean project path
 dep_graph_target: dependency graph output file (relative to global output
 directory)
 dep_graph_tpl: template file for dependency graph, relative to the current
@@ -20,11 +20,13 @@ showmore: enable buttons showing or hiding proofs.
 """
 import os
 import string
+import pickle
 from pathlib import Path
 from typing import List, Optional
 
 from jinja2 import Template
 from pygraphviz import AGraph
+from mathlibtools.lib import LeanProject
 
 from plasTeX import Command, Environment
 from plasTeX.PackageResource import (
@@ -36,6 +38,7 @@ log = getLogger()
 PKG_DIR = Path(__file__).parent
 STATIC_DIR = Path(__file__).parent.parent/'static'
 DEFAULT_TYPES = 'definition+lemma+proposition+theorem+corollary'
+
 
 def item_kind(node) -> str:
     """Return the kind of declaration corresponding to node"""
@@ -111,6 +114,15 @@ class home(Command):
         self.ownerDocument.userdata['project_home'] = self.attributes['url']
         return []
 
+class github(Command):
+    r"""\github{url}"""
+    args = 'url:url'
+
+    def invoke(self, tex):
+        Command.invoke(self, tex)
+        self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent
+        return []
+
 
 class uses(Command):
     r"""\uses{labels list}"""
@@ -167,9 +179,7 @@ class lean(Command):
 
     def digest(self, tokens):
         Command.digest(self, tokens)
-        decl, url = self.attributes['decls']
-        decls = self.parentNode.userdata.get('leandecls', [])
-        decls.append((decl, url))
+        decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
 
 
@@ -283,41 +293,46 @@ def ProcessOptions(options, document):
                 proved.userdata['proved_by'] = proof
     document.addPostParseCallbacks(100, update_proofs)
 
+    def make_lean_urls() -> None:
+        """Build url for Lean declarations referred to in the blueprint"""
+        proj = LeanProject.from_path(options.get('project', '../..'))
+        lean_ver = 'v{:d}.{:d}.{:d}'.format(*proj.lean_version)
+
+        gh = document.userdata.get('project_github', '')
+        base_url = {'mathlib': 'https://github.com/leanprover-community/'
+                               f'mathlib/blob/{proj.mathlib_rev}/src/',
+                    'core': 'https://github.com/leanprover-community/lean/blob/'
+                            f'{lean_ver}/library/init/',
+                    proj.name: f'{gh}/blob/{proj.rev}/src/'}
+        try:
+            with (proj.directory/'decls.pickle').open('rb') as data:
+                decls = pickle.load(data)
+        except FileNotFoundError:
+            log.warning('Could not find decls.pickle')
+            return
+
+        nodes = []
+        for thm_type in document.userdata['thm_types']:
+            nodes += document.getElementsByTagName(thm_type)
+        for node in nodes:
+            leandecls = node.userdata.get('leandecls', [])
+            lean_urls = []
+            for leandecl in leandecls:
+                if leandecl not in decls:
+                    print(f'Lean declaration {leandecl} not found')
+                    continue
+                info = decls[leandecl]
+                lean_urls.append(
+                    (leandecl,
+                     f'{base_url[info.origin]}{info.filepath}#L{info.line}'))
+
+            node.userdata['lean_urls'] = lean_urls
+    document.addPostParseCallbacks(100, make_lean_urls)
+
     ## Dep graph
-    d3_url = options.get('d3_url', 'https://d3js.org/d3.v5.min.js')
-    jquery_url = options.get('jquery_url', 'http://code.jquery.com/jquery.min.js')
     title = options.get('title', 'Dependencies')
     document.userdata['blueprint_dep_graph'] = DepGraph()
-    graph_target = options.get('dep_graph_target', 'dep_graph.html')
 
-    default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
-    graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
-    try:
-        graph_tpl = Template(graph_tpl_path.read_text())
-    except IOError:
-        log.warning('DepGraph template read error, using default template')
-        graph_tpl = Template(default_tpl_path.read_text())
-
-    def makeDepGraph(document):
-        graph = document.userdata['blueprint_dep_graph']
-        dot = graph.to_dot({'definition': 'box'}).to_string()
-        graph_tpl.stream(graph=graph,
-                         dot=dot,
-                         context=document.context,
-                         d3_url=d3_url,
-                         jquery_url=jquery_url,
-                         title=title,
-                         config=document.config).dump(graph_target)
-        return [graph_target]
-
-    cb = PackagePreCleanupCB(data=makeDepGraph)
-    css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
-    css2 = PackageCss(path=STATIC_DIR/'style_coverage.css')
-    js = [PackageJs(path=STATIC_DIR/name, copy_only=True)
-          for name in ['d3.min.js', 'hpcc.min.js', 'd3-graphviz.js',
-                       'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]
-
-    document.addPackageResource([cb, css, css2] + js)
     def makegraph() -> None:
         nodes = []
         for thm_type in document.userdata['thm_types']:
@@ -342,6 +357,34 @@ def ProcessOptions(options, document):
                 node.userdata['can_prove'] = False
 
     document.addPostParseCallbacks(110, makegraph)
+    graph_target = options.get('dep_graph_target', 'dep_graph.html')
+
+    default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
+    graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
+    try:
+        graph_tpl = Template(graph_tpl_path.read_text())
+    except IOError:
+        log.warning('DepGraph template read error, using default template')
+        graph_tpl = Template(default_tpl_path.read_text())
+
+    def make_graph_html(document):
+        graph = document.userdata['blueprint_dep_graph']
+        dot = graph.to_dot({'definition': 'box'}).to_string()
+        graph_tpl.stream(graph=graph,
+                         dot=dot,
+                         context=document.context,
+                         title=title,
+                         config=document.config).dump(graph_target)
+        return [graph_target]
+
+    cb = PackagePreCleanupCB(data=make_graph_html)
+    css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
+    css2 = PackageCss(path=STATIC_DIR/'style_coverage.css')
+    js = [PackageJs(path=STATIC_DIR/name, copy_only=True)
+          for name in ['d3.min.js', 'hpcc.min.js', 'd3-graphviz.js',
+                       'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]
+
+    document.addPackageResource([cb, css, css2] + js)
 
     ## Coverage
     default_tpl_path = PKG_DIR.parent/'templates'/'coverage.html'
