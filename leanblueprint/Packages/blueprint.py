@@ -62,7 +62,7 @@ class DepGraph():
     def to_dot(self, shapes: dict()) -> AGraph:
         """Convert to pygraphviz AGraph"""
         graph = AGraph(directed=True, bgcolor='#e8e8e8')
-        graph.node_attr['penwidth'] = 1.5
+        graph.node_attr['penwidth'] = 1.8
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
             mathlib = node.userdata.get('mathlibok')
@@ -81,9 +81,9 @@ class DepGraph():
             elif can_state:
                 color = 'blue'
             if proved:
-                fillcolor = "#92f67c"
+                fillcolor = "#9cec8b"
             elif can_prove and (can_state or stated):
-                fillcolor = "#9acaf1"
+                fillcolor = "#a3d6ff"
 
             if fillcolor:
                 graph.add_node(node.id,
@@ -202,6 +202,11 @@ class DeclReport():
         self.can_state = can_state
         self.can_prove = can_prove
 
+    @property
+    def done(self):
+        """This item is fully done"""
+        return self.stated if self.kind == 'definition' else self.proved
+
     @classmethod
     def from_thm(cls, thm):
         """Create a DeclReport from a thmenv node"""
@@ -224,6 +229,15 @@ class PartialReport():
         self.coverage = int(100 * (nb_thms - nb_not_covered) / nb_thms if nb_thms else 100)
         self.thm_reports = thm_reports
         self.title = title
+        self.define_next = [thm for thm in thm_reports
+                            if thm.kind == 'definition' and not thm.done and
+                            thm.can_state]
+        self.state_next = [thm for thm in thm_reports
+                           if thm.kind != 'definition' and not thm.stated and
+                           thm.can_state]
+        self.prove_next = [thm for thm in thm_reports
+                           if thm.kind != 'definition' and thm.stated and
+                           not thm.proved and thm.can_prove]
         if self.coverage == 100:
             self.status = 'ok'
         elif self.coverage > 0:
@@ -379,7 +393,7 @@ def ProcessOptions(options, document):
 
     cb = PackagePreCleanupCB(data=make_graph_html)
     css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
-    css2 = PackageCss(path=STATIC_DIR/'style_coverage.css')
+    css2 = PackageCss(path=STATIC_DIR/'style_coverage.css', copy_only=True)
     js = [PackageJs(path=STATIC_DIR/name, copy_only=True)
           for name in ['d3.min.js', 'hpcc.min.js', 'd3-graphviz.js',
                        'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]

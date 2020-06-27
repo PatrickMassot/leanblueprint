@@ -24,7 +24,7 @@ name: thmenv
     {% if obj.title %}
     <span class="{{obj.thmName}}_thmtitle">{{ obj.title }}</span>
     {% endif %}
-    {% if obj.userdata.leanok %}
+    {% if obj.userdata.leanok and ('proved_by' not in obj.userdata or obj.userdata.proved_by.userdata.leanok )%}
     ✓
     {% endif %}
     <div class="thm_icons">

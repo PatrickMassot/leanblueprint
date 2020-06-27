@@ -115,8 +115,6 @@ function interactive() {
         });
 
     d3.selectAll('.dep-closebtn').on('click', function() {
-        console.log(this);
-        console.log(d3.select(this));
         var modal =
             d3.select(this).node().parentNode.parentNode.parentNode ;
         d3.select(modal).style('display', 'none');

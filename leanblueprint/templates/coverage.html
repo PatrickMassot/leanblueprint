@@ -36,7 +36,7 @@ Click chapter titles to see missing items.
   {% if partial.nb_not_covered %}
   <ul class="coverage">
     {% for thm in partial.thm_reports %}
-    {% if not thm.lean %}
+    {% if not thm.done %}
     <li>
       <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
       <div class="thm_thm_content">{{ thm.statement }}</div>
@@ -52,16 +52,14 @@ Click chapter titles to see missing items.
 
 {% for partial in report.partials %}
 <section>
-  {% if partial.nb_not_covered %}
+  {% if partial.define_next %}
   <h3>{{ partial.title }}</h3>
   <ul class="coverage">
-    {% for thm in partial.thm_reports %}
-    {% if thm.kind == 'definition' and not thm.leanok and thm.can_state %}
+    {% for thm in partial.define_next %}
     <li>
       <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
       <div class="thm_thm_content">{{ thm.statement }}</div>
     </li>
-    {% endif %}
     {% endfor %}
   </ul>
   {% endif %}
@@ -72,16 +70,14 @@ Click chapter titles to see missing items.
 
 {% for partial in report.partials %}
 <section>
-  {% if partial.nb_not_covered %}
+  {% if partial.state_next %}
   <h3>{{ partial.title }}</h3>
   <ul class="coverage">
-    {% for thm in partial.thm_reports %}
-    {% if not thm.leanok and thm.can_state %}
+    {% for thm in partial.state_next %}
     <li>
       <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
       <div class="thm_thm_content">{{ thm.statement }}</div>
     </li>
-    {% endif %}
     {% endfor %}
   </ul>
   {% endif %}
@@ -92,16 +88,14 @@ Click chapter titles to see missing items.
 
 {% for partial in report.partials %}
 <section>
-  {% if partial.nb_not_covered %}
+  {% if partial.prove_next %}
   <h3>{{ partial.title }}</h3>
   <ul class="coverage">
-    {% for thm in partial.thm_reports %}
-    {% if thm.leanok and not thm.proved and thm.can_prove %}
+    {% for thm in partial.prove_next %}
     <li>
       <div class="thm_thmheading">{{ thm.caption }} ({{ thm.id }})</div>
       <div class="thm_thm_content">{{ thm.statement }}</div>
     </li>
-    {% endif %}
     {% endfor %}
   </ul>
   {% endif %}
