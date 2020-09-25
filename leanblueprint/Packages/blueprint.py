@@ -84,6 +84,8 @@ class DepGraph():
                 fillcolor = "#9cec8b"
             elif can_prove and (can_state or stated):
                 fillcolor = "#a3d6ff"
+            if stated and item_kind(node) == 'definition':
+                fillcolor = "#b0eca3"
 
             if fillcolor:
                 graph.add_node(node.id,
