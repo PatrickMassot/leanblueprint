@@ -97,7 +97,7 @@ div.dep-modal-content {
   border-radius: 5px;
   background-color: white;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
-  padding: 1rem;
+  padding: .5rem 1rem .2rem 1rem;
 }
 
 div.dep-modal-content a {
@@ -110,3 +110,53 @@ div.thm_icons .icon {
     height: .7rem;
 }
 
+a.latex_link, a.lean_link {
+	font-weight: normal;
+    font-size: 90%;
+    font-style: italic;
+}
+
+a.latex_link {
+	padding-left: 1rem;
+}
+
+a.lean_link {
+	padding-left: .5rem;
+}
+
+/* Tooltip container */
+.tooltip {
+  font-weight: normal;
+  margin-left: .5rem;
+  position: relative;
+  display: inline-block;
+}
+
+/* Tooltip text */
+.tooltip .tooltip_list {
+  visibility: hidden;
+  text-align: center;
+  border-radius: 6px;
+ 
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+}
+
+ul.tooltip_list {
+  list-style-type: none;
+  padding-left: 0;
+  border: 1px solid #497da5; /* FIXME use sass, compare main modals */
+  border-radius: 5px;
+  background-color: white;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
+}
+
+ul.tooltip_list li {
+  padding: .1rem .5rem;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltip_list {
+  visibility: visible;
+}

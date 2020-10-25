@@ -57,7 +57,6 @@
     {% call modal(thm.id) %}
   <div class="thm" id="{{ thm.id }}" style="display: none">
     <div class="thm_thmheading">
-      <a href="{{ thm.url }}">
       <span class="{{ thm.thmName }}_thmcaption">
       {{ thm.caption }}
       </span>
@@ -67,9 +66,25 @@
       {% if thm.title -%}
       <span class="{{thm.thmName}}_thmtitle">{{ thm.title }}</span>
       {%- endif -%}
-      </a>
     </div>
     <div class="thm_thmcontent">{{ thm }}</div>
+
+    <a class="latex_link" href="{{ thm.url }}">LaTeX</a>
+	{% if thm.userdata['lean_urls'] -%}
+    {%- if thm.userdata['lean_urls']|length > 1 -%}
+	<div class="tooltip">
+	    <span class="lean_link">Lean</span>
+	    <ul class="tooltip_list">
+	  	  {% for name, url in thm.userdata['lean_urls'] %}
+	    		 <li><a href="{{ url }}">{{ name }}</a></li>
+	  	  {% endfor %}
+	    </ul>
+	</div>
+    {%- else -%}
+    <a class="lean_link" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
+    {%- endif -%}
+    {%- endif -%}
+
   </div>
     {% endcall %}
 {%- endfor -%}
