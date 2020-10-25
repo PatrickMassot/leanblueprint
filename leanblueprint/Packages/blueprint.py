@@ -311,7 +311,7 @@ def ProcessOptions(options, document):
 
     def make_lean_urls() -> None:
         """Build url for Lean declarations referred to in the blueprint"""
-        proj = LeanProject.from_path(options.get('project', '../..'))
+        proj = LeanProject.from_path(Path(options.get('project', '../..')))
         lean_ver = 'v{:d}.{:d}.{:d}'.format(*proj.lean_version)
 
         gh = document.userdata.get('project_github', '')
