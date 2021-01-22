@@ -1,5 +1,7 @@
 header {
   height: 3rem;
+  justify-content: center;
+  display: flex;
 }
 
 header a {
