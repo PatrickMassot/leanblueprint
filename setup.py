@@ -11,7 +11,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    package_data={'leanblueprint': ['static/*', 'templates/*',
+    package_data={'leanblueprint': ['static/*', 'templates/*', 'Packages/*',
                                     'Packages/renderer_templates/*']},
     classifiers=[
         "Programming Language :: Python :: 3",
