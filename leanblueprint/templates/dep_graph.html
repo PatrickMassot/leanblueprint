@@ -54,7 +54,7 @@
 <div id="statements">
 {%- for thm in graph.nodes | sort(attribute='id') %}
 
-    {% call modal(thm.id) %}
+    {% call modal(thm.id + "_modal") %}
   <div class="thm" id="{{ thm.id }}" style="display: none">
     <div class="thm_thmheading">
       <span class="{{ thm.thmName }}_thmcaption">
@@ -125,7 +125,7 @@ function interactive() {
            var title = d3.select(this).selectAll('title').text().trim();
            $('#statements > div').hide()
            $('.thm').hide();
-           $('#'+title.replace(':', '\\:')).show().children().show();
+           $('#'+title.replace(':', '\\:')+'_modal').show().children().show().children().show();
            $('#statements').show()
         });
 

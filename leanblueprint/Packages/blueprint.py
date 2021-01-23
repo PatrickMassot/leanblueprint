@@ -61,7 +61,7 @@ class DepGraph():
 
     def to_dot(self, shapes: dict()) -> AGraph:
         """Convert to pygraphviz AGraph"""
-        graph = AGraph(directed=True, bgcolor='#e8e8e8')
+        graph = AGraph(directed=True)
         graph.node_attr['penwidth'] = 1.8
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
