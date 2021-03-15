@@ -52,10 +52,9 @@
 </head>
 
 <body>
-{% if links.document.title or toc %}
+{% if toc %}
 <header>
 {% if toc %}{{ icon('list-numbered', id='toc-toggle')}}{% endif %}
-<h1 id="doc_title"><a href="{{ links.home.url }}">{{ links.document.title }}</a></h1>
 </header>
 {% endif %}
 
