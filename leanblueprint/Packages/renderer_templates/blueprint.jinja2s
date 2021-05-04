@@ -83,7 +83,7 @@ name: proof
     {{ context.terms['proof'] }}
     {% endif %}
     </span>
-    {{ icon('plus', class='expand-proof') }}
+    <span class="expand-proof">▼</span>
   </div>
   <div class="proof_content">
   {{ obj }}
