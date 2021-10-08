@@ -439,6 +439,6 @@ def ProcessOptions(options, document):
             document.rendererdata['html5']['extra-nav'] = navs
 
         css = PackageCss(path=STATIC_DIR/'showmore.css')
-        js = PackageJs(path=STATIC_DIR/'showmore.js')
-        js2 = PackageJs(path=STATIC_DIR/'jquery.cookie.js')
+        js = PackageJs(path=STATIC_DIR/'js.cookie.min.js')
+        js2 = PackageJs(path=STATIC_DIR/'showmore.js')
         document.addPackageResource([css, js, js2])
