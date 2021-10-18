@@ -26,15 +26,24 @@
     MathJax.Hub.Config({tex2jax: {inlineMath: [ ['\\(','\\)']]}});
   {% endif %}
   </script>
-  <script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">
+{% if config['mathjax-macros']['macros'] %}
+<script>
+  MathJax = { 
+    tex: {
+      macros: { {% for key, val in config['mathjax-macros']['macros'].items() %}
+        {{ key }}: {{ val }},
+        {% endfor %}
+      } } }
   </script>
+{% endif %}
+  <script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">  </script>
 {% endif %}
 
 </head>
 
 <body>
 <header>
-  <a href="index.html">Home</a>
+  <a class="toc" href="index.html">Home</a>
   <h1 id="doc_title">{{ title }}</h1>
 </header>
 <div class="wrapper">
