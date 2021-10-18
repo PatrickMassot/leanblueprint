@@ -59,9 +59,9 @@ class DepGraph():
         self.edges = set()
         self.proof_edges = set()
 
-    def to_dot(self, shapes: dict()) -> AGraph:
+    def to_dot(self, shapes: dict) -> AGraph:
         """Convert to pygraphviz AGraph"""
-        graph = AGraph(directed=True)
+        graph = AGraph(directed=True, bgcolor='transparent')
         graph.node_attr['penwidth'] = 1.8
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
