@@ -134,7 +134,7 @@ function interactive() {
            var title = d3.select(this).selectAll('title').text().trim();
            $('#statements > div').hide()
            $('.thm').hide();
-           $('#'+title.replace(':', '\\:')+'_modal').show().children().show().children().show();
+           $("[id='" + title.replace(':', '\\:') + '_modal' + "']").show().children().show().children().show();
            $('#statements').show()
         });
 
