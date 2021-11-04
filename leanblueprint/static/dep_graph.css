@@ -166,3 +166,7 @@ ul.tooltip_list li {
 .tooltip:hover .tooltip_list {
   visibility: visible;
 }
+
+.node {
+  cursor: pointer;
+}
