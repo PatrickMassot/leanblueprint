@@ -3,11 +3,11 @@ Package Lean blueprint
 
 Options:
 project: lean project path
-dep_graph_target: dependency graph output file (relative to global output
 directory)
 dep_graph_tpl: template file for dependency graph, relative to the current
 directory
-
+dep_by: optional level for dependency graph generation, for instance chapter or part.
+        The default value is to generate one graph for the whole document
 coverage_tpl: template file for coverage report, relative to the current
 directory
 coverage_target: coverage report output file (relative to global output
@@ -101,9 +101,11 @@ class DepGraph():
                                style='',
                                color=color)
         for s, t in self.edges:
-            graph.add_edge(s.id, t.id, style='dashed')
+            if s in self.nodes and t in self.nodes:
+                graph.add_edge(s.id, t.id, style='dashed')
         for s, t in self.proof_edges:
-            graph.add_edge(s.id, t.id)
+            if s in self.nodes and t in self.nodes:
+                graph.add_edge(s.id, t.id)
         return graph
 
 
@@ -142,6 +144,30 @@ class uses(Command):
 
         doc.addPostParseCallbacks(10, update_used)
 
+class alsoIn(Command):
+    r"""\uses{labels list}"""
+    args = 'labels:list:nox'
+
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        node = self.parentNode
+        doc = self.ownerDocument
+        def update_incls():
+            """
+            Updates the doc.userdata['graph_includes'] dict.
+            Each key in this dict is a section object,
+            and the corresponding value is a list of nodes
+            to also include in the dep graph of that section.
+            """
+            labels_dict = doc.context.labels
+            alsoin = [labels_dict[label]
+                      for label in self.attributes['labels']
+                      if label in labels_dict]
+            incls = doc.userdata.setdefault('graph_includes', dict())
+            for decl in alsoin:
+                incls.setdefault(decl, []).append(node)
+
+        doc.addPostParseCallbacks(10, update_incls)
 
 class proves(Command):
     r"""\proves{label}"""
@@ -347,13 +373,16 @@ def ProcessOptions(options, document):
 
     ## Dep graph
     title = options.get('title', 'Dependencies')
-    document.userdata['blueprint_dep_graph'] = DepGraph()
 
-    def makegraph() -> None:
+    def makegraph(section, title:str) -> None:
         nodes = []
         for thm_type in document.userdata['thm_types']:
-            nodes += document.getElementsByTagName(thm_type)
-        graph = document.userdata.get('blueprint_dep_graph')
+            nodes += section.getElementsByTagName(thm_type)
+        # Add nodes that used \alsoIn
+        incls = document.userdata.get('graph_includes', dict())
+        nodes.extend(incls.get(section, []))
+
+        graph = DepGraph()
         for node in nodes:
             graph.nodes.add(node)
             used = node.userdata.get('uses', [])
@@ -371,11 +400,24 @@ def ProcessOptions(options, document):
                                                  for thm in used)
             else:
                 node.userdata['can_prove'] = False
+        graphs = document.userdata.setdefault('blueprint_dep_graph', dict())
+        graphs[section] = graph
 
-    document.addPostParseCallbacks(110, makegraph)
-    graph_target = options.get('dep_graph_target', 'dep_graph.html')
+    def makegraphs() -> None:
+        dep_by = options.get('dep_by', '')
+        if dep_by:
+            for section in document.getElementsByTagName(dep_by):
+                graph_target = 'dep_graph_' + section.counter + '_' + section.ref.textContent + '.html'
+                document.rendererdata['html5']['extra_toc_items'].append({
+                    'text': section.counter.capitalize() + ' ' + section.ref.textContent + ' graph',
+                    'url': graph_target})
+                makegraph(section, title)
+        else:
+            document.rendererdata['html5']['extra_toc_items'].append({'text': 'Dependency graph','url': 'dep_graph_document.html'})
+            makegraph(document, title)
+
     document.rendererdata['html5'].setdefault('extra_toc_items', [])
-    document.rendererdata['html5']['extra_toc_items'].append({'text': 'Dependency graphou','url': graph_target})
+    document.addPostParseCallbacks(110, makegraphs)
 
     default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
     graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
@@ -386,14 +428,21 @@ def ProcessOptions(options, document):
         graph_tpl = Template(default_tpl_path.read_text())
 
     def make_graph_html(document):
-        graph = document.userdata['blueprint_dep_graph']
-        dot = graph.to_dot({'definition': 'box'}).to_string()
-        graph_tpl.stream(graph=graph,
-                         dot=dot,
-                         context=document.context,
-                         title=title,
-                         config=document.config).dump(graph_target)
-        return [graph_target]
+        files = []
+        for sec, graph in document.userdata['blueprint_dep_graph'].items():
+            if sec == document:
+                name = 'document'
+            else:
+                name = sec.counter + '_' + sec.ref.textContent
+            graph_target = 'dep_graph_' + name + '.html'
+            files.append(graph_target)
+            dot = graph.to_dot({'definition': 'box'}).to_string()
+            graph_tpl.stream(graph=graph,
+                             dot=dot,
+                             context=document.context,
+                             title=title,
+                             config=document.config).dump(graph_target)
+        return files
 
     cb = PackagePreCleanupCB(data=make_graph_html)
     css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
