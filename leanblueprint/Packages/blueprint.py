@@ -52,7 +52,7 @@ class DepGraph():
     """
     A TeX declarations dependency graph.
     Contrasting with leancrawler dependencies graph,
-    each node and edge is human declarated in the TeX source.
+    each node and edge is human declared in the TeX source.
     """
     def __init__(self):
         self.nodes = set()
@@ -374,6 +374,8 @@ def ProcessOptions(options, document):
 
     document.addPostParseCallbacks(110, makegraph)
     graph_target = options.get('dep_graph_target', 'dep_graph.html')
+    document.rendererdata['html5'].setdefault('extra_toc_items', [])
+    document.rendererdata['html5']['extra_toc_items'].append({'text': 'Dependency graphou','url': graph_target})
 
     default_tpl_path = PKG_DIR.parent/'templates'/'dep_graph.html'
     graph_tpl_path = Path(options.get('dep_graph_tpl', default_tpl_path))
@@ -413,7 +415,7 @@ def ProcessOptions(options, document):
 
 
     coverage_target = options.get('coverage_target', 'coverage.html')
-    outfile = os.path.join(outdir, coverage_target)
+    outfile = (Path(outdir)/coverage_target).absolute()
 
     thm_types = [thm.strip()
                  for thm in options.get('coverage_thms', DEFAULT_TYPES).split('+')]
@@ -425,7 +427,7 @@ def ProcessOptions(options, document):
         report = Report([PartialReport.from_section(sec, thm_types) for sec in sections])
         cov_tpl.stream(report=report,
                        config=document.config,
-                       terms=document.context.terms).dump(outfile)
+                       terms=document.context.terms).dump(outfile.open('w+'))
         return [outfile]
     document.addPackageResource(PackagePreCleanupCB(data=makeCoverageReport))
 
