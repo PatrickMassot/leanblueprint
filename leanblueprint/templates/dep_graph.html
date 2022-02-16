@@ -48,17 +48,22 @@
 </header>
 <div class="wrapper">
 <div class="content">
-	<div id="Legend">
-		<span class="title">Legend:</span>
-		<dl>
-			<dt>Boxes</dt><dd>definitions</dd>
-			<dt>Ellipses</dt><dd>theorems </dd>
-			<dt>Blue border</dt><dd>ready</dd>
-			<dt>Blue bg</dt><dd>proof ready</dd>
-			<dt>Green border</dt><dd>statement done</dd>
-			<dt>Green bg</dt><dd>proof done</dd>
-		</dl>
-	</div>
+  <div id="Legend">
+    <span id="legend_title" class="title">Legend
+    <div class="btn">
+       <div class="bar"></div>
+       <div class="bar"></div>
+       <div class="bar"></div>
+    </div></span> 
+    <dl class="legend">
+      <dt>Boxes</dt><dd>definitions</dd>
+      <dt>Ellipses</dt><dd>theorems and lemmas</dd>
+      <dt>Blue border</dt><dd>the <em>statement</em> of this result is ready to be formalized; all prerequisites are done</dd>
+      <dt>Blue background</dt><dd>the <em>proof</em> of this result is ready to be formalized; all prerequisites are done</dd>
+      <dt>Green border</dt><dd>the <em>statement</em> of this result is formalized</dd>
+      <dt>Green background</dt><dd>the <em>proof</em> of this result is formalized</dd>
+    </dl>
+  </div>
     <div id="graph"></div>
 <div id="statements">
 {%- for thm in graph.nodes | sort(attribute='id') %}
@@ -79,16 +84,16 @@
     <div class="thm_thmcontent">{{ thm }}</div>
 
     <a class="latex_link" href="{{ thm.url }}">LaTeX</a>
-	{% if thm.userdata['lean_urls'] -%}
+  {% if thm.userdata['lean_urls'] -%}
     {%- if thm.userdata['lean_urls']|length > 1 -%}
-	<div class="tooltip">
-	    <span class="lean_link">Lean</span>
-	    <ul class="tooltip_list">
-	  	  {% for name, url in thm.userdata['lean_urls'] %}
-	    		 <li><a href="{{ url }}">{{ name }}</a></li>
-	  	  {% endfor %}
-	    </ul>
-	</div>
+  <div class="tooltip">
+      <span class="lean_link">Lean</span>
+      <ul class="tooltip_list">
+        {% for name, url in thm.userdata['lean_urls'] %}
+           <li><a href="{{ url }}">{{ name }}</a></li>
+        {% endfor %}
+      </ul>
+  </div>
     {%- else -%}
     <a class="lean_link" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
     {%- endif -%}
@@ -111,6 +116,7 @@ const graphContainer = d3.select("#graph");
 const width = graphContainer.node().clientWidth;
 const height = graphContainer.node().clientHeight;
 
+
 graphContainer.graphviz({useWorker: true})
     .width(width)
     .height(height)
@@ -127,6 +133,9 @@ clickNode = function() {
   $('#'+node_id.replace(':', '\\:')).show().children().show();
 }
 function interactive() {
+    $("span#legend_title").on("click", function () {
+           $(this).siblings('dl').toggle();
+        })
 
     d3.selectAll('.node')
         .attr('pointer-events', 'fill')
