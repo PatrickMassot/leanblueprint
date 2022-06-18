@@ -147,6 +147,9 @@ class uses(Command):
             labels_dict = doc.context.labels
             used = [labels_dict[label]
                     for label in self.attributes['labels'] if label in labels_dict]
+            for label in self.attributes['labels']:
+                if label not in labels_dict:
+                    log.error("Label '" + label + "' could not be resolved")
             node.setUserData('uses', used)
 
         doc.addPostParseCallbacks(10, update_used)
