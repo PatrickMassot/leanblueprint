@@ -404,7 +404,7 @@ def ProcessOptions(options, document):
 
             node.userdata['lean4_urls'] = lean_urls
 
-    document.addPostParseCallbacks(100, make_lean_urls)
+    document.addPostParseCallbacks(100, make_lean4_urls)
 
     ## Dep graph
     title = options.get('title', 'Dependencies')
