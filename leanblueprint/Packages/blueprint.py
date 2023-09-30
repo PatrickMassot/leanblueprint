@@ -23,10 +23,10 @@ import string
 import pickle
 from pathlib import Path
 from typing import List, Optional
+import warnings
 
 from jinja2 import Template
 from pygraphviz import AGraph
-from mathlibtools.lib import LeanProject
 
 from plasTeX import Command, Environment
 from plasTeX.PackageResource import (
@@ -210,6 +210,14 @@ class lean(Command):
         decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
 
+class leanfour(Command):
+    r"""\leanfour{decl list} """
+    args = 'decls:list:nox'
+
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        decls = [dec.strip() for dec in self.attributes['decls']]
+        self.parentNode.setUserData('lean4decls', decls)
 
 class DeclReport():
     """
@@ -337,38 +345,65 @@ def ProcessOptions(options, document):
 
     def make_lean_urls() -> None:
         """Build url for Lean declarations referred to in the blueprint"""
-        proj = LeanProject.from_path(Path(options.get('project', '../..')))
-        lean_ver = 'v{:d}.{:d}.{:d}'.format(*proj.lean_version)
 
-        gh = document.userdata.get('project_github', '')
-        base_url = {'mathlib': 'https://github.com/leanprover-community/'
-                               f'mathlib/blob/{proj.mathlib_rev}/src/',
-                    'core': 'https://github.com/leanprover-community/lean/blob/'
-                            f'{lean_ver}/library/init/',
-                    proj.name: f'{gh}/blob/{proj.rev}/src/'}
         try:
-            with (proj.directory/'decls.pickle').open('rb') as data:
-                decls = pickle.load(data)
-        except FileNotFoundError:
-            log.warning('Could not find decls.pickle')
-            return
+            from mathlibtools.lib import LeanProject
+            
+            proj = LeanProject.from_path(Path(options.get('project', '../..')))
+            lean_ver = 'v{:d}.{:d}.{:d}'.format(*proj.lean_version)
+
+            gh = document.userdata.get('project_github', '')
+            base_url = {'mathlib': 'https://github.com/leanprover-community/'
+                                f'mathlib/blob/{proj.mathlib_rev}/src/',
+                        'core': 'https://github.com/leanprover-community/lean/blob/'
+                                f'{lean_ver}/library/init/',
+                        proj.name: f'{gh}/blob/{proj.rev}/src/'}
+            try:
+                with (proj.directory/'decls.pickle').open('rb') as data:
+                    decls = pickle.load(data)
+            except FileNotFoundError:
+                log.warning('Could not find decls.pickle')
+                return
+
+            nodes = []
+            for thm_type in document.userdata['thm_types']:
+                nodes += document.getElementsByTagName(thm_type)
+            for node in nodes:
+                leandecls = node.userdata.get('leandecls', [])
+                lean_urls = []
+                for leandecl in leandecls:
+                    if leandecl not in decls:
+                        print(f'Lean declaration {leandecl} not found')
+                        continue
+                    info = decls[leandecl]
+                    lean_urls.append(
+                        (leandecl,
+                        f'{base_url[info.origin]}{info.filepath}#L{info.line}'))
+
+                node.userdata['lean_urls'] = lean_urls
+        except ImportError:
+            warnings.warn("Failed to make URL for Lean 3 (run `pip install mathlibtools` to fix)")
+            raise
+    document.addPostParseCallbacks(100, make_lean_urls)
+
+    lean4_url_base = options.get('lean4_url_base', 'https://leanprover-community.github.io/mathlib4_docs/')
+
+    def make_lean4_urls() -> None:
+        """Build url for Lean 4 declarations referred to in the blueprint"""
 
         nodes = []
         for thm_type in document.userdata['thm_types']:
             nodes += document.getElementsByTagName(thm_type)
         for node in nodes:
-            leandecls = node.userdata.get('leandecls', [])
+            lean4decls = node.userdata.get('lean4decls', [])
             lean_urls = []
-            for leandecl in leandecls:
-                if leandecl not in decls:
-                    print(f'Lean declaration {leandecl} not found')
-                    continue
-                info = decls[leandecl]
+            for leandecl in lean4decls:
                 lean_urls.append(
                     (leandecl,
-                     f'{base_url[info.origin]}{info.filepath}#L{info.line}'))
+                    f'{lean4_url_base}/find/?pattern={leandecl}#doc'))
 
-            node.userdata['lean_urls'] = lean_urls
+            node.userdata['lean4_urls'] = lean_urls
+
     document.addPostParseCallbacks(100, make_lean_urls)
 
     ## Dep graph

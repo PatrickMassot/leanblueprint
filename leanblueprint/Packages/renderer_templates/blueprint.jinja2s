@@ -52,6 +52,16 @@ name: thmenv
         </ul>
     {% endcall %}
     {% endif %}
+    {% if obj.userdata.lean4decls %}
+    <button class="modal lean">L∃∀N 4</button>
+    {% call modal('Lean 4 declarations') %}
+        <ul class="uses">
+          {% for lean, url in obj.userdata.lean4_urls %}
+          <li><a href="{{ url }}">{{ lean }}</a></li>
+          {% endfor %}
+        </ul>
+    {% endcall %}
+    {% endif %}
 
     {% if obj.userdata.covered_by %}
     <button class="modal">{{ icon('pencil') }}</button>
