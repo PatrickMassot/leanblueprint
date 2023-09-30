@@ -126,7 +126,15 @@ class github(Command):
         Command.invoke(self, tex)
         self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent
         return []
+    
+class dochome(Command):
+    r"""\dochome{url}"""
+    args = 'url:url'
 
+    def invoke(self, tex):
+        Command.invoke(self, tex)
+        self.ownerDocument.userdata['project_dochome'] = self.attributes['url'].textContent
+        return []
 
 class uses(Command):
     r"""\uses{labels list}"""
@@ -386,10 +394,11 @@ def ProcessOptions(options, document):
             raise
     document.addPostParseCallbacks(100, make_lean_urls)
 
-    lean4_url_base = options.get('lean4_url_base', 'https://leanprover-community.github.io/mathlib4_docs/')
-
     def make_lean4_urls() -> None:
         """Build url for Lean 4 declarations referred to in the blueprint"""
+
+        lean4_url_base = document.userdata.get('project_dochome',
+                                               'https://leanprover-community.github.io/mathlib4_docs/')
 
         nodes = []
         for thm_type in document.userdata['thm_types']:
