@@ -43,7 +43,7 @@ name: thmenv
     {% endcall %}
     {% endif %}
     {% if obj.userdata.leandecls %}
-    <button class="modal lean">L∃∀N</button>
+    <button class="modal lean">L∃∀N 3</button>
     {% call modal('Lean declarations') %}
         <ul class="uses">
           {% for lean, url in obj.userdata.lean_urls %}
