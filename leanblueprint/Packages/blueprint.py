@@ -344,7 +344,7 @@ def ProcessOptions(options, document):
         """Build url for Lean 4 declarations referred to in the blueprint"""
 
         project_dochome = document.userdata.get('project_dochome',
-                                               'https://leanprover-community.github.io/mathlib4_docs/')
+                                               'https://leanprover-community.github.io/mathlib4_docs')
 
         nodes = []
         for thm_type in document.userdata['thm_types']:
@@ -355,7 +355,7 @@ def ProcessOptions(options, document):
             for leandecl in leandecls:
                 lean_urls.append(
                     (leandecl,
-                    f'{project_dochome}/find/?pattern={leandecl}#doc'))
+                    f'{project_dochome}/find/#doc/{leandecl}'))
 
             node.userdata['lean_urls'] = lean_urls
 
