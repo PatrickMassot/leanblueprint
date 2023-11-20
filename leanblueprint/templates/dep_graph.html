@@ -123,7 +123,7 @@ graphContainer.graphviz({useWorker: true})
     .width(width)
     .height(height)
     .fit(true)
-    .renderDot('{{ dot.replace('\n','') }}')
+    .renderDot(`{{ dot.replace('\n','') }}`)
     .on("end", interactive);
 
 clickNode = function() {
