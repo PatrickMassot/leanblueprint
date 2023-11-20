@@ -38,7 +38,9 @@
 {% endif %}
   <script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">  </script>
 {% endif %}
-
+{% for css in config.html5.get('extra-css', []) %}
+<link rel="stylesheet" href="styles/{{ css }}" />
+{% endfor %}
 </head>
 
 <body>
@@ -155,7 +157,9 @@ function interactive() {
 }
 
 </script>
-
+{% for js in config.html5.get('extra-js', []) %}
+<script type="text/javascript" src="js/{{ js }}"></script>
+{% endfor %}
 </body>
 </html>
 
