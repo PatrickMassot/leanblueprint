@@ -38,7 +38,9 @@
 {% endif %}
   <script type="text/javascript" src="{{ config.html5['mathjax-url'] }}">  </script>
 {% endif %}
-
+{% for css in config.html5.get('extra-css', []) %}
+<link rel="stylesheet" href="styles/{{ css }}" />
+{% endfor %}
 </head>
 
 <body>
@@ -90,12 +92,12 @@
       <span class="lean_link">Lean</span>
       <ul class="tooltip_list">
         {% for name, url in thm.userdata['lean_urls'] %}
-           <li><a href="{{ url }}">{{ name }}</a></li>
+           <li><a href="{{ url }}" class="lean_decl">{{ name }}</a></li>
         {% endfor %}
       </ul>
   </div>
     {%- else -%}
-    <a class="lean_link" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
+    <a class="lean_link lean_decl" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
     {%- endif -%}
     {%- endif -%}
 
@@ -121,7 +123,7 @@ graphContainer.graphviz({useWorker: true})
     .width(width)
     .height(height)
     .fit(true)
-    .renderDot('{{ dot.replace('\n','') }}')
+    .renderDot(`{{ dot.replace('\n','') }}`)
     .on("end", interactive);
 
 clickNode = function() {
@@ -155,7 +157,9 @@ function interactive() {
 }
 
 </script>
-
+{% for js in config.html5.get('extra-js', []) %}
+<script type="text/javascript" src="js/{{ js }}"></script>
+{% endfor %}
 </body>
 </html>
 

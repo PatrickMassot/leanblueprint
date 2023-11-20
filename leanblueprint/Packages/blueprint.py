@@ -26,7 +26,6 @@ from typing import List, Optional
 
 from jinja2 import Template
 from pygraphviz import AGraph
-from mathlibtools.lib import LeanProject
 
 from plasTeX import Command, Environment
 from plasTeX.PackageResource import (
@@ -126,7 +125,15 @@ class github(Command):
         Command.invoke(self, tex)
         self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent
         return []
+    
+class dochome(Command):
+    r"""\dochome{url}"""
+    args = 'url:url'
 
+    def invoke(self, tex):
+        Command.invoke(self, tex)
+        self.ownerDocument.userdata['project_dochome'] = self.attributes['url'].textContent
+        return []
 
 class uses(Command):
     r"""\uses{labels list}"""
@@ -200,7 +207,6 @@ class mathlibok(Command):
         self.parentNode.userdata['leanok'] = True
         self.parentNode.userdata['mathlibok'] = True
 
-
 class lean(Command):
     r"""\lean{decl list} """
     args = 'decls:list:nox'
@@ -209,7 +215,6 @@ class lean(Command):
         Command.digest(self, tokens)
         decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
-
 
 class DeclReport():
     """
@@ -336,22 +341,10 @@ def ProcessOptions(options, document):
     document.addPostParseCallbacks(100, update_proofs)
 
     def make_lean_urls() -> None:
-        """Build url for Lean declarations referred to in the blueprint"""
-        proj = LeanProject.from_path(Path(options.get('project', '../..')))
-        lean_ver = 'v{:d}.{:d}.{:d}'.format(*proj.lean_version)
+        """Build url for Lean 4 declarations referred to in the blueprint"""
 
-        gh = document.userdata.get('project_github', '')
-        base_url = {'mathlib': 'https://github.com/leanprover-community/'
-                               f'mathlib/blob/{proj.mathlib_rev}/src/',
-                    'core': 'https://github.com/leanprover-community/lean/blob/'
-                            f'{lean_ver}/library/init/',
-                    proj.name: f'{gh}/blob/{proj.rev}/src/'}
-        try:
-            with (proj.directory/'decls.pickle').open('rb') as data:
-                decls = pickle.load(data)
-        except FileNotFoundError:
-            log.warning('Could not find decls.pickle')
-            return
+        project_dochome = document.userdata.get('project_dochome',
+                                               'https://leanprover-community.github.io/mathlib4_docs')
 
         nodes = []
         for thm_type in document.userdata['thm_types']:
@@ -360,15 +353,12 @@ def ProcessOptions(options, document):
             leandecls = node.userdata.get('leandecls', [])
             lean_urls = []
             for leandecl in leandecls:
-                if leandecl not in decls:
-                    print(f'Lean declaration {leandecl} not found')
-                    continue
-                info = decls[leandecl]
                 lean_urls.append(
                     (leandecl,
-                     f'{base_url[info.origin]}{info.filepath}#L{info.line}'))
+                    f'{project_dochome}/find/#doc/{leandecl}'))
 
             node.userdata['lean_urls'] = lean_urls
+
     document.addPostParseCallbacks(100, make_lean_urls)
 
     ## Dep graph
