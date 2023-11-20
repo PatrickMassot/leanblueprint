@@ -47,7 +47,7 @@ name: thmenv
     {% call modal('Lean declarations') %}
         <ul class="uses">
           {% for lean, url in obj.userdata.lean_urls %}
-          <li><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ lean }}</a></li>
+          <li><a href="{{ url }}" class="lean_decl">{{ lean }}</a></li>
           {% endfor %}
         </ul>
     {% endcall %}
