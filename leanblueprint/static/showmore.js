@@ -33,7 +33,7 @@ $(document).ready(function() {
 					 function(){
 						 $(this).hide();
 					 });
-			 $("svg.expand-proof").show();
+			 $("span.expand-proof").html("▶");
 			 $("footer").show();
 			 break;
 			case 2:
@@ -51,7 +51,7 @@ $(document).ready(function() {
 					 function(){
 						 $(this).show();
 					 });
-			 $("svg.expand-proof").hide();
+			 $("span.expand-proof").html("▼");
 		}
 	};
 

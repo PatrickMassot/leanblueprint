@@ -83,7 +83,7 @@ name: proof
     {{ context.terms['proof'] }}
     {% endif %}
     </span>
-    <span class="expand-proof">▼</span>
+    <span class="expand-proof">{% if obj.ownerDocument.userdata['uses_showmore'] %}▶{% else %}▼{% endif %}</span>
   </div>
   <div class="proof_content">
   {{ obj }}
