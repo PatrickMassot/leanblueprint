@@ -16,11 +16,10 @@ coverage_thms: list of theorem environment covered, separated by +
 coverage_sectioning: coverage report section grouping
 
 showmore: enable buttons showing or hiding proofs.
+nonreducedgraph: keep all edges in the dependency, even transitively redundant ones.
 
 """
-import os
 import string
-import pickle
 from pathlib import Path
 from typing import List, Optional
 
@@ -420,6 +419,8 @@ def ProcessOptions(options, document):
         log.warning('DepGraph template read error, using default template')
         graph_tpl = Template(default_tpl_path.read_text())
 
+    reduce_graph = not options.get('nonreducedgraph', False)
+
     def make_graph_html(document):
         files = []
         for sec, graph in document.userdata['blueprint_dep_graph'].items():
@@ -429,9 +430,11 @@ def ProcessOptions(options, document):
                 name = sec.counter + '_' + sec.ref.textContent
             graph_target = 'dep_graph_' + name + '.html'
             files.append(graph_target)
-            dot = graph.to_dot({'definition': 'box'}).to_string()
+            dot = graph.to_dot({'definition': 'box'})
+            if reduce_graph:
+                dot = dot.tred()
             graph_tpl.stream(graph=graph,
-                             dot=dot,
+                             dot=dot.to_string(),
                              context=document.context,
                              title=title,
                              config=document.config).dump(graph_target)
