@@ -56,6 +56,34 @@ class DepGraph():
         self.nodes = set()
         self.edges = set()
         self.proof_edges = set()
+        self._ancestors = dict()
+        self._predecessors = dict()
+
+    def predecessors(self, node):
+        """
+        Return direct predecessors of the given node, as a set.
+        This is meant to be called only after all nodes have been added since the result is cached.
+        """
+        if node in self._predecessors:
+            return self._predecessors[node]
+        else:
+            return self._predecessors.setdefault(node, {e[0] for e in self.edges.union(self.proof_edges) if e[1] == node})
+
+    def ancestors(self, node):
+        """
+        Return ancestors of the given node, as a set.
+        This is meant to be called only after all nodes have been added since the result is cached.
+        """
+        if not node in self.nodes:
+            return set()
+        else:
+            if node in self._ancestors:
+                return self._ancestors[node]
+            else:
+                pred = self.predecessors(node)
+                return self._ancestors.setdefault(node,
+                                pred.union(*map(self.ancestors, pred)))
+
 
     def to_dot(self, shapes: dict) -> AGraph:
         """Convert to pygraphviz AGraph"""
@@ -68,7 +96,7 @@ class DepGraph():
             can_state = node.userdata.get('can_state')
             can_prove = node.userdata.get('can_prove')
             proof = node.userdata.get('proved_by')
-            proved = proof.userdata.get('leanok', False) if proof else False
+            proved = node.userdata.get('proved')
 
             color = ''
             fillcolor = ''
@@ -84,6 +112,10 @@ class DepGraph():
                 fillcolor = "#a3d6ff"
             if stated and item_kind(node) == 'definition':
                 fillcolor = "#b0eca3"
+
+            if node.userdata.get('fully_proved'):
+                fillcolor = "#1CAC78"
+
 
             if fillcolor:
                 graph.add_node(node.id,
@@ -375,8 +407,8 @@ def ProcessOptions(options, document):
         nodes.extend(incls.get(section, []))
 
         graph = DepGraph()
+        graph.nodes = set(nodes)
         for node in nodes:
-            graph.nodes.add(node)
             used = node.userdata.get('uses', [])
             #graph.nodes.update(used)
             for thm in used:
@@ -390,8 +422,14 @@ def ProcessOptions(options, document):
                     graph.proof_edges.add((thm, node))
                 node.userdata['can_prove'] = all(thm.userdata.get('leanok')
                                                  for thm in used)
+                node.userdata['proved'] = proof.userdata.get('leanok', False)
             else:
                 node.userdata['can_prove'] = False
+                node.userdata['proved'] = False
+
+        for node in nodes:
+            node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(n) == 'definition' for n in graph.ancestors(node).union({node}))
+
         graphs = document.userdata.setdefault('blueprint_dep_graph', dict())
         graphs[section] = graph
 
