@@ -55,17 +55,6 @@ name: thmenv
     {% if obj.userdata.issue %}
     <a class="github_link" href="{{ obj.ownerDocument.userdata.project_github }}/issues/{{ obj.userdata.issue }}">Discussion</a>
     {% endif %}
-
-    {% if obj.userdata.covered_by %}
-    <button class="modal">{{ icon('pencil') }}</button>
-    {% call modal(context.terms.get('Covered by', 'Covered by')) %}
-        <ul>
-          {% for exo in obj.userdata.covered_by %}
-          <li><a href="{{ exo.url }}">{{ exo.caption }} {{ exo.ref }}</a></li>
-          {% endfor %}
-        </ul>
-    {% endcall %}
-    {% endif %}
   </div>
   </div>
   <div class="{{ obj.thmName }}_thmcontent">
