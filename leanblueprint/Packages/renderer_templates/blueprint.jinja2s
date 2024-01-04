@@ -52,6 +52,9 @@ name: thmenv
         </ul>
     {% endcall %}
     {% endif %}
+    {% if obj.userdata.issue %}
+    <a class="github_link" href="{{ obj.ownerDocument.userdata.project_github }}/issues/{{ obj.userdata.issue }}">Discussion</a>
+    {% endif %}
 
     {% if obj.userdata.covered_by %}
     <button class="modal">{{ icon('pencil') }}</button>
@@ -90,5 +93,5 @@ name: proof
   </div>
 </div>
 
-name: covers uses proves leanok lean collectproofs makegraph mathlibok notready
+name: covers uses proves leanok lean collectproofs makegraph mathlibok notready discussion
 

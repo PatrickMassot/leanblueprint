@@ -102,6 +102,9 @@
     <a class="lean_link lean_decl" href="{{ thm.userdata['lean_urls'][0][1] }}">Lean</a>
     {%- endif -%}
     {%- endif -%}
+  {% if thm.userdata['issue'] -%}
+  <a class="issue_link" href="{{ github }}/issues/{{ thm.userdata['issue'] }}">Discussion</a>
+  {%- endif -%}
 
   </div>
     {% endcall %}

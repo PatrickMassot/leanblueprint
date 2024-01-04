@@ -158,7 +158,7 @@ class github(Command):
 
     def invoke(self, tex):
         Command.invoke(self, tex)
-        self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent
+        self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent.rstrip('/')
         return []
 
 class dochome(Command):
@@ -276,6 +276,14 @@ class lean(Command):
         Command.digest(self, tokens)
         decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
+
+class discussion(Command):
+    r"""\discussion{issue_number} """
+    args = 'issue:str'
+
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        self.parentNode.setUserData('issue', self.attributes['issue'].lstrip('#').strip())
 
 class DeclReport():
     """
@@ -505,17 +513,19 @@ def ProcessOptions(options, document):
                              context=document.context,
                              title=title,
                              colors=colors,
+                             github=document.userdata['project_github'],
                              config=document.config).dump(graph_target)
         return files
 
     cb = PackagePreCleanupCB(data=make_graph_html)
     css = PackageCss(path=STATIC_DIR/'dep_graph.css', copy_only=True)
     css2 = PackageCss(path=STATIC_DIR/'style_coverage.css', copy_only=True)
+    css3 = PackageCss(path=STATIC_DIR/'blueprint.css')
     js = [PackageJs(path=STATIC_DIR/name, copy_only=True)
           for name in ['d3.min.js', 'hpcc.min.js', 'd3-graphviz.js',
                        'expatlib.wasm', 'graphvizlib.wasm', 'coverage.js']]
 
-    document.addPackageResource([cb, css, css2] + js)
+    document.addPackageResource([cb, css, css2, css3] + js)
 
     ## Coverage
     default_tpl_path = PKG_DIR.parent/'templates'/'coverage.html'

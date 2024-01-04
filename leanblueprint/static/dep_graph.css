@@ -138,8 +138,8 @@ div.thm_icons .icon {
     height: .7rem;
 }
 
-a.latex_link, a.lean_link {
-	font-weight: normal;
+a.latex_link, a.lean_link, a.issue_link {
+    font-weight: normal;
     font-size: 90%;
     font-style: italic;
 }
@@ -148,9 +148,10 @@ a.latex_link {
 	padding-left: 1rem;
 }
 
-a.lean_link {
+a.lean_link, a.issue_link {
 	padding-left: .5rem;
 }
+
 
 /* Tooltip container */
 .tooltip {
