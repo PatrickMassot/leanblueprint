@@ -389,6 +389,53 @@ def find_proved_thm(proof) -> Optional[Environment]:
         node = node.previousSibling
     return None
 
+CHECKMARK_TPL = Template("""
+    {% if obj.userdata.leanok and ('proved_by' not in obj.userdata or obj.userdata.proved_by.userdata.leanok ) %}
+    ✓
+    {% endif %}
+""")
+
+LINK_TPL = Template("""
+    <a class="icon proof" href="{{ obj.url }}">#</a>
+""")
+
+PROVED_BY_TPL = Template("""
+    {% if obj.userdata.proved_by %}
+    <a class="icon proof" href="{{ obj.userdata.proved_by.url }}">{{ icon('cogs') }}</a>
+    {% endif %}
+""")
+
+USES_TPL = Template("""
+    {% if obj.userdata.uses %}
+    <button class="modal">{{ icon('mindmap') }}</button>
+    {% call modal(context.terms.get('Uses', 'Uses')) %}
+        <ul class="uses">
+          {% for used in obj.userdata.uses %}
+          <li><a href="{{ used.url }}">{{ used.caption }} {{ used.ref }}</a></li>
+          {% endfor %}
+        </ul>
+    {% endcall %}
+    {% endif %}
+""")
+
+LEAN_DECLS_TPL = Template("""
+    {% if obj.userdata.leandecls %}
+    <button class="modal lean">L∃∀N</button>
+    {% call modal('Lean declarations') %}
+        <ul class="uses">
+          {% for lean, url in obj.userdata.lean_urls %}
+          <li><a href="{{ url }}" class="lean_decl">{{ lean }}</a></li>
+          {% endfor %}
+        </ul>
+    {% endcall %}
+    {% endif %}
+""")
+
+GITHUB_ISSUE_TPL = Template("""
+    {% if obj.userdata.issue %}
+    <a class="github_link" href="{{ obj.ownerDocument.userdata.project_github }}/issues/{{ obj.userdata.issue }}">Discussion</a>
+    {% endif %}
+""")
 
 def ProcessOptions(options, document):
     """This is called when the package is loaded."""
@@ -557,6 +604,13 @@ def ProcessOptions(options, document):
 
     section = options.get('coverage_sectioning', 'chapter')
 
+    document.userdata['thm_header_extras_tpl'] = [CHECKMARK_TPL]
+    document.userdata['thm_header_hidden_extras_tpl'] = [LINK_TPL,
+                                                         PROVED_BY_TPL,
+                                                         USES_TPL,
+                                                         LEAN_DECLS_TPL,
+                                                         GITHUB_ISSUE_TPL]
+
     def makeCoverageReport(document):
         sections = document.getElementsByTagName(section)
         report = Report([PartialReport.from_section(sec, thm_types) for sec in sections])
@@ -579,6 +633,4 @@ def ProcessOptions(options, document):
         js = PackageJs(path=STATIC_DIR/'js.cookie.min.js')
         js2 = PackageJs(path=STATIC_DIR/'showmore.js')
         document.addPackageResource([css, js, js2])
-        document.userdata['uses_showmore'] = True
-    else:
-        document.userdata['uses_showmore'] = False
+        document.userdata['expand-proof_default_content'] = '▶'
