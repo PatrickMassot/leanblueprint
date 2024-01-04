@@ -56,6 +56,7 @@ class DepGraph():
         self.nodes = set()
         self.edges = set()
         self.proof_edges = set()
+        self.document = None
         self._ancestors = dict()
         self._predecessors = dict()
 
@@ -89,6 +90,7 @@ class DepGraph():
         """Convert to pygraphviz AGraph"""
         graph = AGraph(directed=True, bgcolor='transparent')
         graph.node_attr['penwidth'] = 1.8
+        colors = {k: v[0] for k, v in self.document.userdata['dep_graph_colors'].items()}
         graph.edge_attr.update(arrowhead='vee')
         for node in self.nodes:
             mathlib = node.userdata.get('mathlibok')
@@ -101,22 +103,22 @@ class DepGraph():
             color = ''
             fillcolor = ''
             if mathlib:
-                color = 'darkgreen'
+                color = colors['mathlib']
             elif stated:
-                color = 'green'
+                color = colors['stated']
             elif can_state:
-                color = 'blue'
+                color = colors['can_state']
             elif notready:
-                color = '#FFAA33'
+                color = colors['not_ready']
             if proved:
-                fillcolor = "#9cec8b"
+                fillcolor = colors['proved']
             elif can_prove and (can_state or stated):
-                fillcolor = "#a3d6ff"
+                fillcolor = colors['can_prove']
             if stated and item_kind(node) == 'definition':
-                fillcolor = "#b0eca3"
+                fillcolor = colors['defined']
 
             if node.userdata.get('fully_proved'):
-                fillcolor = "#1CAC78"
+                fillcolor = colors['fully_proved']
 
 
             if fillcolor:
@@ -166,6 +168,23 @@ class dochome(Command):
     def invoke(self, tex):
         Command.invoke(self, tex)
         self.ownerDocument.userdata['project_dochome'] = self.attributes['url'].textContent
+        return []
+
+class bpcolor(Command):
+    r"""\bpcolor{key}{color}{description}"""
+    args = 'key:str color:str descr:str'
+
+    def invoke(self, tex):
+        Command.invoke(self, tex)
+        colors = self.ownerDocument.userdata['dep_graph_colors']
+        key = self.attributes['key']
+        color = self.attributes['color']
+        descr = self.attributes['descr']
+        if key not in colors:
+            valid = ', '.join(colors.keys())
+            log.error(f'Invalid dependency graph color key: {key}. Valid keys are {valid}.')
+            return []
+        colors[key] = (color, descr)
         return []
 
 class uses(Command):
@@ -415,6 +434,7 @@ def ProcessOptions(options, document):
         nodes.extend(incls.get(section, []))
 
         graph = DepGraph()
+        graph.document = document
         graph.nodes = set(nodes)
         for node in nodes:
             used = node.userdata.get('uses', [])
@@ -479,10 +499,12 @@ def ProcessOptions(options, document):
             dot = graph.to_dot({'definition': 'box'})
             if reduce_graph:
                 dot = dot.tred()
+            colors = {k: v[1] for k, v in document.userdata['dep_graph_colors'].items()}
             graph_tpl.stream(graph=graph,
                              dot=dot.to_string(),
                              context=document.context,
                              title=title,
+                             colors=colors,
                              config=document.config).dump(graph_target)
         return files
 
@@ -511,6 +533,18 @@ def ProcessOptions(options, document):
     thm_types = [thm.strip()
                  for thm in options.get('coverage_thms', DEFAULT_TYPES).split('+')]
     document.userdata['thm_types'] = thm_types
+
+    document.userdata['dep_graph_colors'] = {
+            'mathlib': ('darkgreen', 'Dark green'),
+            'stated': ('green', 'Green'),
+            'can_state': ('blue', 'Blue'),
+            'not_ready': ('#FFAA33', 'Orange'),
+            'proved': ('#9CEC8B', 'Green'),
+            'can_prove': ('#A3D6FF', 'Blue'),
+            'defined': ('#B0ECA3', 'Light green'),
+            'fully_proved': ('#1CAC78', 'Dark green')
+            }
+
     section = options.get('coverage_sectioning', 'chapter')
 
     def makeCoverageReport(document):
