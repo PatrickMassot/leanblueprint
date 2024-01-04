@@ -95,7 +95,7 @@ class DepGraph():
             stated = node.userdata.get('leanok')
             can_state = node.userdata.get('can_state')
             can_prove = node.userdata.get('can_prove')
-            proof = node.userdata.get('proved_by')
+            notready = node.userdata.get('notready')
             proved = node.userdata.get('proved')
 
             color = ''
@@ -106,6 +106,8 @@ class DepGraph():
                 color = 'green'
             elif can_state:
                 color = 'blue'
+            elif notready:
+                color = '#FFAA33'
             if proved:
                 fillcolor = "#9cec8b"
             elif can_prove and (can_state or stated):
@@ -232,6 +234,12 @@ class leanok(Command):
     def digest(self, tokens):
         Command.digest(self, tokens)
         self.parentNode.userdata['leanok'] = True
+
+class notready(Command):
+    r"""\notready"""
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        self.parentNode.userdata['notready'] = True
 
 
 class mathlibok(Command):
@@ -414,7 +422,7 @@ def ProcessOptions(options, document):
             for thm in used:
                 graph.edges.add((thm, node))
             node.userdata['can_state'] = all(thm.userdata.get('leanok')
-                                             for thm in used)
+                                             for thm in used) and not node.userdata.get('notready', False)
             proof = node.userdata.get('proved_by')
             if proof:
                 used = proof.userdata.get('uses', [])
