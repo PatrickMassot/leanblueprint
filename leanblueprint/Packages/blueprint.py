@@ -198,7 +198,7 @@ def ProcessOptions(options, document):
                     node.userdata['proved'] = False
 
             for node in nodes:
-                node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(n) == 'definition' for n in graph.ancestors(node).union({node}))
+                node.userdata['fully_proved'] = all(not n.userdata or n.userdata['proved'] or item_kind(n) == 'definition' for n in graph.ancestors(node).union({node}))
 
     document.addPostParseCallbacks(150, make_lean_data)
 
