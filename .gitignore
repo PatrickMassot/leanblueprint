@@ -5,3 +5,5 @@ leanblueprint.egg-info
 __pycache__
 .sass-cache/
 .python-version
+build/
+dist/
