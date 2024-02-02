@@ -1,0 +1,88 @@
+on:
+  push:
+    branches:
+      - {| master_branch |}
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build_project:
+    runs-on: ubuntu-latest
+    name: Build project
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Print files to upstream
+        run: |
+          grep -r --files-without-match 'import {| lib_name |}' {| lib_name |} | sort > 1.txt
+          grep -r --files-with-match 'sorry' {| lib_name |} | sort > 2.txt
+          mkdir -p docs/_includes
+          comm -23 1.txt 2.txt | sed -e 's/^\(.*\)$/- [`\1`](https:\/\/github.com\/{| github_username |}\/{| github_projectname |}\/blob\/{| master_branch |}\/\1)/' > docs/_includes/files_to_upstream.md
+          rm 1.txt 2.txt
+
+      - name: Install elan
+        run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.5.0
+
+      - name: Get cache
+        run: ~/.elan/bin/lake -Kenv=dev exe cache get || true
+
+      - name: Build project
+        run: ~/.elan/bin/lake -Kenv=dev build {| lib_name |}
+
+      - name: Cache mathlib docs
+        uses: actions/cache@v3
+        with:
+          path: |
+            .lake/build/doc/Init
+            .lake/build/doc/Lake
+            .lake/build/doc/Lean
+            .lake/build/doc/Std
+            .lake/build/doc/Mathlib
+            .lake/build/doc/declarations
+            !.lake/build/doc/declarations/declaration-data-{| lib_name |}*
+          key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
+          restore-keys: |
+            MathlibDoc-
+
+      - name: Build documentation
+        run: ~/.elan/bin/lake -Kenv=dev build {| lib_name |}:docs
+
+      - name: Build blueprint and copy to `docs/blueprint`
+        uses: xu-cheng/texlive-action@v2
+        with:
+          docker_image: ghcr.io/xu-cheng/texlive-full:20231201
+          run: |
+            export PIP_BREAK_SYSTEM_PACKAGES=1
+            apk update
+            apk add --update make py3-pip git
+            apk add --update make py3-pip git pkgconfig graphviz graphviz-dev gcc musl-dev
+            git config --global --add safe.directory $GITHUB_WORKSPACE
+            git config --global --add safe.directory `pwd`
+            python3 -m pip install --upgrade pip requests wheel
+            python3 -m pip install pygraphviz --global-option=build_ext --global-option="-L/usr/lib/graphviz/" --global-option="-R/usr/lib/graphviz/"
+            pip install leanblueprint
+            leanblueprint build all
+
+      - name: Copy documentation to `docs/docs`
+        run: |
+          mv .lake/build/doc docs/docs
+
+      - name: Upload docs & blueprint artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs/_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+
+      - name: Make sure the cache works
+        run: |
+          mv docs/docs .lake/build/doc
