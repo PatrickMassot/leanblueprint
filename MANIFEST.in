@@ -1,2 +1,3 @@
 include leanblueprint/static/*
+include leanblueprint/templates/*
 include leanblueprint/Packages/renderer_templates/*
