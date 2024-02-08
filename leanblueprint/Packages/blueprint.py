@@ -15,11 +15,9 @@ import string
 from pathlib import Path
 
 from jinja2 import Template
-
 from plasTeX import Command
-from plasTeX.PackageResource import PackageTemplateDir, PackageCss
 from plasTeX.Logging import getLogger
-
+from plasTeX.PackageResource import PackageCss, PackageTemplateDir
 from plastexdepgraph.Packages.depgraph import item_kind
 
 log = getLogger()
