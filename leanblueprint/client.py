@@ -1,13 +1,16 @@
 import logging
+import os
 import sys
 import subprocess
-import shlex
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from collections import deque
 import re
+import http.server
+import socketserver
 
-import click
+# import click
+import rich_click as click
 from jinja2 import Environment, FileSystemLoader
 from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.console import Console
@@ -26,7 +29,7 @@ log.addHandler(logging.StreamHandler())
 # https://stackoverflow.com/questions/46641928
 
 
-class CustomMultiCommand(click.Group):
+class CustomMultiCommand(click.RichGroup):
     def command(self, *args, **kwargs):  # type: ignore
         """Behaves the same as `click.Group.command()` except if passed
         a list of names, all after the first will be aliases for the first.
@@ -135,7 +138,8 @@ blueprint_root = Path(repo.working_dir)/"blueprint"
 
 @cli.command()
 def new() -> None:
-    """Create a new Lean blueprint in the given repository.
+    """
+    Create a new Lean blueprint in the given repository.
     """
     loader = FileSystemLoader(Path(__file__).parent/"templates")
     env = Environment(loader=loader, variable_start_string='{|', variable_end_string='|}',
@@ -295,9 +299,62 @@ def new() -> None:
 
 @cli.command()
 def pdf() -> None:
+    """
+    Compile the pdf version of the blueprint using latexmk.
+    """
     (blueprint_root/"print").mkdir(exist_ok=True)
-    args = shlex.split("xelatex -output-directory=../print print.tex")
-    subprocess.run(args, cwd=str(blueprint_root/"src"), check=True)
+    subprocess.run("latexmk", cwd=str(
+        blueprint_root/"src"), check=True, shell=True)
+
+
+@cli.command()
+def web() -> None:
+    """
+    Compile the html version of the blueprint using plasTeX.
+    """
+    (blueprint_root/"web").mkdir(exist_ok=True)
+    subprocess.run("plastex -c plastex.cfg web.tex",
+                   cwd=str(blueprint_root/"src"), check=True, shell=True)
+
+
+@cli.command()
+def all() -> None:
+    """
+    Compile both the pdf and html versions of the blueprint using latexmk and plasTeX.
+    """
+    pdf()
+    web()
+
+
+@cli.command()
+def serve() -> None:
+    """
+    Launch a web server to see the (already compiled) blueprint.
+
+    This is useful is order to see the dependency graph in particular.
+    """
+    cwd = os.getcwd()
+    os.chdir(blueprint_root/'web')
+    Handler = http.server.SimpleHTTPRequestHandler
+    httpd = None
+    for port in range(8000, 8010):
+        try:
+            httpd = socketserver.TCPServer(("", port), Handler)
+            break
+        except OSError:
+            pass
+    if httpd is None:
+        print("Could not find an available port.")
+        sys.exit(1)
+    try:
+        (ip, port) = httpd.server_address
+        ip = ip or 'localhost'
+        print(f'Serving http://{ip}:{port}/ \nPress Ctrl-c to interrupt.')
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    httpd.server_close()
+    os.chdir(cwd)
 
 
 def safe_cli():
