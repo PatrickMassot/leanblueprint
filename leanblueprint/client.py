@@ -1,6 +1,5 @@
 import logging
 import sys
-import os
 import subprocess
 import shlex
 from pathlib import Path
@@ -9,7 +8,7 @@ from collections import deque
 import re
 
 import click
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader
 from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.console import Console
 from rich.theme import Theme
@@ -26,7 +25,7 @@ log.addHandler(logging.StreamHandler())
 # Click aliases from Stephen Rauch at
 # https://stackoverflow.com/questions/46641928
 class CustomMultiCommand(click.Group):
-    def command(self, *args, **kwargs):
+    def command(self, *args, **kwargs): # type: ignore
         """Behaves the same as `click.Group.command()` except if passed
         a list of names, all after the first will be aliases for the first.
         """
