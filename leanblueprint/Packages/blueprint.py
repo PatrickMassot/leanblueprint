@@ -90,6 +90,8 @@ class lean(Command):
         Command.digest(self, tokens)
         decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
+        all_decls = self.ownerDocument.userdata.setdefault('lean_decls', [])
+        all_decls.extend(decls)
 
 
 class discussion(Command):
@@ -178,7 +180,10 @@ def ProcessOptions(options, document):
     outdir = string.Template(outdir).substitute({'jobname': jobname})
 
     def make_lean_data() -> None:
-        """Build url and formalization status for nodes in the dependency graphs."""
+        """
+        Build url and formalization status for nodes in the dependency graphs.
+        Also create the file lean_decls of all Lean names referred to in the blueprint.
+        """
 
         project_dochome = document.userdata.get('project_dochome',
                                                 'https://leanprover-community.github.io/mathlib4_docs')
@@ -212,6 +217,9 @@ def ProcessOptions(options, document):
             for node in nodes:
                 node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(
                     n) == 'definition' for n in graph.ancestors(node).union({node}))
+
+        lean_decls_path = Path(document.userdata['working-dir']).parent/"lean_decls"
+        lean_decls_path.write_text("\n".join(document.userdata["lean_decls"]))
 
     document.addPostParseCallbacks(150, make_lean_data)
 
