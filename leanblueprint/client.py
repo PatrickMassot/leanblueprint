@@ -24,8 +24,10 @@ log.addHandler(logging.StreamHandler())
 
 # Click aliases from Stephen Rauch at
 # https://stackoverflow.com/questions/46641928
+
+
 class CustomMultiCommand(click.Group):
-    def command(self, *args, **kwargs): # type: ignore
+    def command(self, *args, **kwargs):  # type: ignore
         """Behaves the same as `click.Group.command()` except if passed
         a list of names, all after the first will be aliases for the first.
         """
@@ -46,6 +48,7 @@ class CustomMultiCommand(click.Group):
         return decorator
 
     """Allows the user to shorten commands to a (unique) prefix."""
+
     def get_command(self, ctx, cmd_name):
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
@@ -58,7 +61,9 @@ class CustomMultiCommand(click.Group):
             return click.Group.get_command(self, ctx, matches[0])
         ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
+
 debug = False
+
 
 def handle_exception(exc, msg):
     if debug:
@@ -79,34 +84,41 @@ custom_theme = Theme({
 
 console = Console(theme=custom_theme)
 
+
 def ask(*args, **kwargs) -> str:
     kwargs.update({'console': console})
     return Prompt.ask(*args, **kwargs)
+
 
 def confirm(*args, **kwargs) -> bool:
     kwargs.update({'console': console})
     return Confirm.ask(*args, **kwargs)
 
+
 def askInt(*args, **kwargs) -> int:
     kwargs.update({'console': console})
     return IntPrompt.ask(*args, **kwargs)
 
+
 def warning(msg: str) -> None:
     console.print(f"[warning]Warning:[/] {msg}")
+
 
 def error(msg: str) -> None:
     console.print(f"[error]Error:[/] {msg}")
     sys.exit(1)
 
-@click.group(cls=CustomMultiCommand, context_settings={ 'help_option_names':['-h', '--help']})
+
+@click.group(cls=CustomMultiCommand, context_settings={'help_option_names': ['-h', '--help']})
 @click.option('--debug', 'python_debug', default=False, is_flag=True,
               help='Display python tracebacks in case of error.')
 @click.version_option()
 def cli(python_debug: bool) -> None:
     """Command line client to manage Lean blueprints.
     Use leanblueprint COMMAND --help to get more help on any specific command."""
-    global  debug
+    global debug
     debug = python_debug
+
 
 repo: Optional[Repo] = None
 try:
@@ -119,6 +131,7 @@ if not (Path(repo.working_dir)/"lakefile.lean").exists():
     error("Could not find a Lean project. Please run this command from inside your project folder.")
 
 blueprint_root = Path(repo.working_dir)/"blueprint"
+
 
 @cli.command()
 def new() -> None:
@@ -144,7 +157,7 @@ def new() -> None:
     except GitCommandError:
         try:
             # Name of the author of the first commit.
-            name = deque(repo.iter_commits(),1)[0].author.name
+            name = deque(repo.iter_commits(), 1)[0].author.name
         except IndexError:
             # This will happen if there is no commit in the repo.
             name = "Anonymous"
@@ -166,7 +179,8 @@ def new() -> None:
                     default_lib = m.group(1)
             found_default = bool(default_re.match(line))
     if not libs:
-        warning("Could not find Lean library names in lakefile. Will not propose to setup continuous integration.")
+        warning(
+            "Could not find Lean library names in lakefile. Will not propose to setup continuous integration.")
         can_try_ci = False
 
     # Will now try to guess the GitHub url
@@ -192,9 +206,10 @@ def new() -> None:
         if githubUserName:
             github = f"https://github.com/{githubUserName}/{githubRepoName}"
             githubIO = f"https://{githubUserName}.github.io/{githubRepoName}"
-            doc_home  = f"https://{githubUserName}.github.io/{githubRepoName}/docs"
+            doc_home = f"https://{githubUserName}.github.io/{githubRepoName}/docs"
         else:
-            warning("Could not guess GitHub information. Will not propose to setup continuous integration.")
+            warning(
+                "Could not guess GitHub information. Will not propose to setup continuous integration.")
             can_try_ci = False
 
     out_dir = Path(repo.working_dir)/"blueprint"
@@ -214,25 +229,30 @@ def new() -> None:
     config['github_username'] = githubUserName
     config['github_projectname'] = githubRepoName
 
-
     console.print("\nGeneral information about the project", style="title")
     config['title'] = ask("Project title", default="My formalization project")
-    config['lib_name'] = ask("Lean library name", choices=libs, default=default_lib or libs[0])
-    config['author'] = ask("Author ([info]use \\and to separate authors if needed[/])", default=name)
+    config['lib_name'] = ask(
+        "Lean library name", choices=libs, default=default_lib or libs[0])
+    config['author'] = ask(
+        "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
     config['github'] = ask("Url of github repository", default=github)
     config['home'] = ask("Url of project website", default=githubIO)
-    config['dochome'] = ask("Url of project API documentation", default=doc_home)
+    config['dochome'] = ask(
+        "Url of project API documentation", default=doc_home)
 
     console.print("\nLaTeX settings for the pdf version", style="title")
     config['documentclass'] = ask("LaTeX document class", default="report")
     config['paper'] = ask("LaTeX paper", default="a4paper")
 
     console.print("\nLaTeX settings for the web version", style="title")
-    config['showmore'] = confirm("Show buttons allowing to show or hide all proofs", default=True)
+    config['showmore'] = confirm(
+        "Show buttons allowing to show or hide all proofs", default=True)
     config['toc_depth'] = askInt("Table of contents depth", default=3)
-    config['split_level'] = askInt("Split file level [info](0 means each chapter gets a file, 1 means the same for sections etc.[/])", default=0)
-    config['localtoc_depth'] = askInt("Per html file local table of contents depth [info](0 means there will be no local table of contents)[/]", default=0)
+    config['split_level'] = askInt(
+        "Split file level [info](0 means each chapter gets a file, 1 means the same for sections etc.[/])", default=0)
+    config['localtoc_depth'] = askInt(
+        "Per html file local table of contents depth [info](0 means there will be no local table of contents)[/]", default=0)
 
     console.print("\nConfiguration completed", style="title")
 
@@ -249,18 +269,19 @@ def new() -> None:
         path.parent.mkdir(exist_ok=True)
         tpl.stream(config).dump(str(path))
 
-    console.print("\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
+    console.print(
+        "\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
 
     workflow_files: List[Path] = []
     if can_try_ci and confirm("Configure continuous integration to compile blueprint?",
-               default=True):
+                              default=True):
         tpl = env.get_template("blueprint.yml")
         path = Path(repo.working_dir)/".github"/"workflows"
         path.mkdir(parents=True, exist_ok=True)
         tpl.stream(config).dump(str(path/"blueprint.yml"))
-        console.print(f"GitHub workflow file created at {path/'blueprint.yml'}")
+        console.print(
+            f"GitHub workflow file created at {path/'blueprint.yml'}")
         workflow_files.append(path/'blueprint.yml')
-
 
     if not confirm("\nCommit to git repository?"):
         sys.exit(0)
@@ -268,7 +289,9 @@ def new() -> None:
     msg = ask("Commit message", default="Setup blueprint")
     repo.index.add([out_dir] + workflow_files)
     repo.index.commit(msg)
-    console.print("Git commit created. Don't forget to push when you are ready.")
+    console.print(
+        "Git commit created. Don't forget to push when you are ready.")
+
 
 @cli.command()
 def pdf() -> None:
@@ -276,11 +299,13 @@ def pdf() -> None:
     args = shlex.split("xelatex -output-directory=../print print.tex")
     subprocess.run(args, cwd=str(blueprint_root/"src"), check=True)
 
+
 def safe_cli():
     try:
-        cli() # pylint: disable=no-value-for-parameter
+        cli()  # pylint: disable=no-value-for-parameter
     except Exception as err:
         handle_exception(err, str(err))
+
 
 if __name__ == "__main__":
     # This allows `python3 -m leanblueprint.client`.

@@ -27,6 +27,7 @@ log = getLogger()
 PKG_DIR = Path(__file__).parent
 STATIC_DIR = Path(__file__).parent.parent/'static'
 
+
 class home(Command):
     r"""\home{url}"""
     args = 'url:url'
@@ -36,14 +37,17 @@ class home(Command):
         self.ownerDocument.userdata['project_home'] = self.attributes['url']
         return []
 
+
 class github(Command):
     r"""\github{url}"""
     args = 'url:url'
 
     def invoke(self, tex):
         Command.invoke(self, tex)
-        self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent.rstrip('/')
+        self.ownerDocument.userdata['project_github'] = self.attributes['url'].textContent.rstrip(
+            '/')
         return []
+
 
 class dochome(Command):
     r"""\dochome{url}"""
@@ -54,14 +58,18 @@ class dochome(Command):
         self.ownerDocument.userdata['project_dochome'] = self.attributes['url'].textContent
         return []
 
+
 class leanok(Command):
     r"""\leanok"""
+
     def digest(self, tokens):
         Command.digest(self, tokens)
         self.parentNode.userdata['leanok'] = True
 
+
 class notready(Command):
     r"""\notready"""
+
     def digest(self, tokens):
         Command.digest(self, tokens)
         self.parentNode.userdata['notready'] = True
@@ -69,10 +77,12 @@ class notready(Command):
 
 class mathlibok(Command):
     r"""\mathlibok"""
+
     def digest(self, tokens):
         Command.digest(self, tokens)
         self.parentNode.userdata['leanok'] = True
         self.parentNode.userdata['mathlibok'] = True
+
 
 class lean(Command):
     r"""\lean{decl list} """
@@ -83,13 +93,15 @@ class lean(Command):
         decls = [dec.strip() for dec in self.attributes['decls']]
         self.parentNode.setUserData('leandecls', decls)
 
+
 class discussion(Command):
     r"""\discussion{issue_number} """
     args = 'issue:str'
 
     def digest(self, tokens):
         Command.digest(self, tokens)
-        self.parentNode.setUserData('issue', self.attributes['issue'].lstrip('#').strip())
+        self.parentNode.setUserData(
+            'issue', self.attributes['issue'].lstrip('#').strip())
 
 
 CHECKMARK_TPL = Template("""
@@ -140,6 +152,7 @@ GITHUB_LINK_TPL = Template("""
   {%- endif -%}
 """)
 
+
 def ProcessOptions(options, document):
     """This is called when the package is loaded."""
 
@@ -170,7 +183,7 @@ def ProcessOptions(options, document):
         """Build url and formalization status for nodes in the dependency graphs."""
 
         project_dochome = document.userdata.get('project_dochome',
-                                               'https://leanprover-community.github.io/mathlib4_docs')
+                                                'https://leanprover-community.github.io/mathlib4_docs')
 
         for graph in document.userdata['dep_graph']['graphs'].values():
             nodes = graph.nodes
@@ -180,7 +193,7 @@ def ProcessOptions(options, document):
                 for leandecl in leandecls:
                     lean_urls.append(
                         (leandecl,
-                        f'{project_dochome}/find/#doc/{leandecl}'))
+                         f'{project_dochome}/find/#doc/{leandecl}'))
 
                 node.userdata['lean_urls'] = lean_urls
 
@@ -192,28 +205,30 @@ def ProcessOptions(options, document):
                     used.extend(proof.userdata.get('uses', []))
                     node.userdata['can_prove'] = all(thm.userdata.get('leanok')
                                                      for thm in used)
-                    node.userdata['proved'] = proof.userdata.get('leanok', False)
+                    node.userdata['proved'] = proof.userdata.get(
+                        'leanok', False)
                 else:
                     node.userdata['can_prove'] = False
                     node.userdata['proved'] = False
 
             for node in nodes:
-                node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(n) == 'definition' for n in graph.ancestors(node).union({node}))
+                node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(
+                    n) == 'definition' for n in graph.ancestors(node).union({node}))
 
     document.addPostParseCallbacks(150, make_lean_data)
 
     document.addPackageResource([PackageCss(path=STATIC_DIR/'blueprint.css')])
 
     colors = document.userdata['dep_graph']['colors'] = {
-            'mathlib': ('darkgreen', 'Dark green'),
-            'stated': ('green', 'Green'),
-            'can_state': ('blue', 'Blue'),
-            'not_ready': ('#FFAA33', 'Orange'),
-            'proved': ('#9CEC8B', 'Green'),
-            'can_prove': ('#A3D6FF', 'Blue'),
-            'defined': ('#B0ECA3', 'Light green'),
-            'fully_proved': ('#1CAC78', 'Dark green')
-            }
+        'mathlib': ('darkgreen', 'Dark green'),
+        'stated': ('green', 'Green'),
+        'can_state': ('blue', 'Blue'),
+        'not_ready': ('#FFAA33', 'Orange'),
+        'proved': ('#9CEC8B', 'Green'),
+        'can_prove': ('#A3D6FF', 'Blue'),
+        'defined': ('#B0ECA3', 'Light green'),
+        'fully_proved': ('#1CAC78', 'Dark green')
+    }
 
     def colorizer(node) -> str:
         data = node.userdata
@@ -255,15 +270,21 @@ def ProcessOptions(options, document):
     document.userdata['dep_graph']['fillcolorizer'] = fillcolorizer
 
     document.userdata['dep_graph']['legend'].extend([
-      (f"{document.userdata['dep_graph']['colors']['can_state'][1]} border", "the <em>statement</em> of this result is ready to be formalized; all prerequisites are done"),
-      (f"{document.userdata['dep_graph']['colors']['not_ready'][1]} border", "the <em>statement</em> of this result is not ready to be formalized; the blueprint needs more work"),
-      (f"{document.userdata['dep_graph']['colors']['can_state'][1]} background", "the <em>proof</em> of this result is ready to be formalized; all prerequisites are done"),
-      (f"{document.userdata['dep_graph']['colors']['proved'][1]} border", "the <em>statement</em> of this result is formalized"),
-      (f"{document.userdata['dep_graph']['colors']['proved'][1]} background", "the <em>proof</em> of this result is formalized"),
-      (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", "the <em>proof</em> of this result and all its ancestors are formalized")])
+        (f"{document.userdata['dep_graph']['colors']['can_state'][1]} border",
+         "the <em>statement</em> of this result is ready to be formalized; all prerequisites are done"),
+        (f"{document.userdata['dep_graph']['colors']['not_ready'][1]} border",
+            "the <em>statement</em> of this result is not ready to be formalized; the blueprint needs more work"),
+        (f"{document.userdata['dep_graph']['colors']['can_state'][1]} background",
+            "the <em>proof</em> of this result is ready to be formalized; all prerequisites are done"),
+        (f"{document.userdata['dep_graph']['colors']['proved'][1]} border",
+            "the <em>statement</em> of this result is formalized"),
+        (f"{document.userdata['dep_graph']['colors']['proved'][1]} background",
+            "the <em>proof</em> of this result is formalized"),
+        (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", "the <em>proof</em> of this result and all its ancestors are formalized")])
 
-    document.userdata.setdefault('thm_header_extras_tpl', []).extend([CHECKMARK_TPL])
+    document.userdata.setdefault(
+        'thm_header_extras_tpl', []).extend([CHECKMARK_TPL])
     document.userdata.setdefault('thm_header_hidden_extras_tpl', []).extend([LEAN_DECLS_TPL,
-                                                         GITHUB_ISSUE_TPL])
+                                                                             GITHUB_ISSUE_TPL])
     document.userdata['dep_graph'].setdefault('extra_modal_links_tpl', []).extend([
         LEAN_LINKS_TPL, GITHUB_LINK_TPL])
