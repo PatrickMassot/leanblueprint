@@ -1,23 +1,21 @@
+import http.server
 import logging
 import os
-import sys
-import subprocess
-from pathlib import Path
-from typing import Optional, Dict, Any, List
-from collections import deque
 import re
-import http.server
 import socketserver
+import subprocess
+import sys
+from collections import deque
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-# import click
 import rich_click as click
-from jinja2 import Environment, FileSystemLoader
-from rich.prompt import Prompt, Confirm, IntPrompt
-from rich.console import Console
-from rich.theme import Theme
-from git.repo import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
-
+from git.repo import Repo
+from jinja2 import Environment, FileSystemLoader
+from rich.console import Console
+from rich.prompt import Confirm, IntPrompt, Prompt
+from rich.theme import Theme
 
 log = logging.getLogger("Mathlib tools")
 log.setLevel(logging.INFO)
