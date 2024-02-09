@@ -60,7 +60,7 @@ jobs:
             python3 -m pip install --upgrade pip requests wheel
             python3 -m pip install pygraphviz --global-option=build_ext --global-option="-L/usr/lib/graphviz/" --global-option="-R/usr/lib/graphviz/"
             pip install git+https://github.com/PatrickMassot/leanblueprint.git@client
-            leanblueprint all
+            PATH=$PATH:.elan/bin leanblueprint all
 
       - name: Copy documentation to `docs/docs`
         run: |
