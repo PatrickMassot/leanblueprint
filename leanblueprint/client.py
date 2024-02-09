@@ -254,7 +254,7 @@ def new() -> None:
     config['toc_depth'] = askInt("Table of contents depth", default=3)
     config['split_level'] = askInt(
         "Split file level [info](0 means each chapter gets a file, 1 means the same for sections etc.[/])", default=0)
-    config['localtoc_depth'] = askInt(
+    config['localtoc_level'] = askInt(
         "Per html file local table of contents depth [info](0 means there will be no local table of contents)[/]", default=0)
 
     console.print("\nConfiguration completed", style="title")
@@ -267,6 +267,7 @@ def new() -> None:
     for tpl_name in env.list_templates():
         if tpl_name.endswith("blueprint.yml"):
             continue
+        print(tpl_name)
         tpl = env.get_template(tpl_name)
         path = out_dir/"src"/tpl_name
         path.parent.mkdir(exist_ok=True)
@@ -314,34 +315,40 @@ def new() -> None:
         "Git commit created. Don't forget to push when you are ready.")
     console.print("\nYou are all set :tada:\n")
 
+def mk_pdf() -> None:
+    (blueprint_root/"print").mkdir(exist_ok=True)
+    subprocess.run("latexmk -output-directory=../print", cwd=str(
+        blueprint_root/"src"), check=True, shell=True)
 
 @cli.command()
 def pdf() -> None:
     """
     Compile the pdf version of the blueprint using latexmk.
     """
-    (blueprint_root/"print").mkdir(exist_ok=True)
-    subprocess.run("latexmk", cwd=str(
-        blueprint_root/"src"), check=True, shell=True)
+    mk_pdf()
 
 
+def mk_web() -> None:
+    (blueprint_root/"web").mkdir(exist_ok=True)
+    subprocess.run("plastex -c plastex.cfg web.tex",
+                   cwd=str(blueprint_root/"src"), check=True, shell=True)
 @cli.command()
 def web() -> None:
     """
     Compile the html version of the blueprint using plasTeX.
     """
-    (blueprint_root/"web").mkdir(exist_ok=True)
-    subprocess.run("plastex -c plastex.cfg web.tex",
-                   cwd=str(blueprint_root/"src"), check=True, shell=True)
+    mk_web()
 
+def do_checkdecls() -> None:
+    subprocess.run("lake exe checkdecls blueprint/lean_decls",
+                   cwd=str(blueprint_root.parent), check=True, shell=True)
 @cli.command()
 def checkdecls() -> None:
     """
     Check that each declaration mentioned in the blueprint exists in Lean.
     Requires to build the project and the blueprint first.
     """
-    subprocess.run("lake exe checkdecls blueprint/lean_decls",
-                   cwd=str(blueprint_root.parent), check=True, shell=True)
+    do_checkdecls()
 
 
 @cli.command()
@@ -349,11 +356,11 @@ def all() -> None:
     """
     Compile both the pdf and html versions of the blueprint and check declarations.
     """
-    pdf()
-    web()
+    mk_pdf()
+    mk_web()
     subprocess.run("lake build",
                    cwd=str(blueprint_root.parent), check=True, shell=True)
-    checkdecls()
+    do_checkdecls()
 
 
 

@@ -219,7 +219,7 @@ def ProcessOptions(options, document):
                     n) == 'definition' for n in graph.ancestors(node).union({node}))
 
         lean_decls_path = Path(document.userdata['working-dir']).parent/"lean_decls"
-        lean_decls_path.write_text("\n".join(document.userdata["lean_decls"]))
+        lean_decls_path.write_text("\n".join(document.userdata.get("lean_decls", [])))
 
     document.addPostParseCallbacks(150, make_lean_data)
 
