@@ -19,14 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Print files to upstream
-        run: |
-          grep -r --files-without-match 'import {| lib_name |}' {| lib_name |} | sort > 1.txt
-          grep -r --files-with-match 'sorry' {| lib_name |} | sort > 2.txt
-          mkdir -p docs/_includes
-          comm -23 1.txt 2.txt | sed -e 's/^\(.*\)$/- [`\1`](https:\/\/github.com\/{| github_username |}\/{| github_projectname |}\/blob\/{| master_branch |}\/\1)/' > docs/_includes/files_to_upstream.md
-          rm 1.txt 2.txt
-
       - name: Install elan
         run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.5.0
 
@@ -67,8 +59,8 @@ jobs:
             git config --global --add safe.directory `pwd`
             python3 -m pip install --upgrade pip requests wheel
             python3 -m pip install pygraphviz --global-option=build_ext --global-option="-L/usr/lib/graphviz/" --global-option="-R/usr/lib/graphviz/"
-            pip install leanblueprint
-            leanblueprint build all
+            pip install git+https://github.com/PatrickMassot/leanblueprint.git@client
+            leanblueprint all
 
       - name: Copy documentation to `docs/docs`
         run: |

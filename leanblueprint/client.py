@@ -8,6 +8,7 @@ import sys
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from textwrap import dedent
 
 import rich_click as click
 from git.exc import GitCommandError, InvalidGitRepositoryError
@@ -143,7 +144,7 @@ def new() -> None:
     env = Environment(loader=loader, variable_start_string='{|', variable_end_string='|}',
                       comment_start_string='{--', comment_end_string='--}')
 
-    console.print("Welcome to Lean blueprint", style="title")
+    console.print("\nWelcome to Lean blueprint\n", style="title")
     can_try_ci = True
 
     if repo is None:
@@ -160,7 +161,7 @@ def new() -> None:
         try:
             # Name of the author of the first commit.
             name = deque(repo.iter_commits(), 1)[0].author.name
-        except IndexError:
+        except (IndexError, ValueError):
             # This will happen if there is no commit in the repo.
             name = "Anonymous"
 
@@ -176,7 +177,7 @@ def new() -> None:
         for line in lf:
             m = lib_re.match(line)
             if m:
-                libs.append(m.group(1))
+                libs.append(m.group(1).strip("«» "))
                 if found_default:
                     default_lib = m.group(1)
             found_default = bool(default_re.match(line))
@@ -274,6 +275,23 @@ def new() -> None:
     console.print(
         "\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
 
+    if confirm("Modify lakefile to allow checking declarations exist?",
+               default=True):
+        with lakefile_path.open("a") as lf:
+            lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
+        console.print("Ok, lakefile is edited.")
+
+    if confirm("Modify lakefile to allow building the documentation on GitHub?",
+               default=True):
+        with lakefile_path.open("a") as lf:
+            lf.write(dedent('''
+
+                meta if get_config? env = some "dev" then
+                require «doc-gen4» from git
+                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
+        console.print("Ok, lakefile is edited.")
+
+
     workflow_files: List[Path] = []
     if can_try_ci and confirm("Configure continuous integration to compile blueprint?",
                               default=True):
@@ -286,13 +304,15 @@ def new() -> None:
         workflow_files.append(path/'blueprint.yml')
 
     if not confirm("\nCommit to git repository?"):
+        console.print("You are all set! Don’t forget to commit whenever you feel ready.")
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([out_dir] + workflow_files)
+    repo.index.add([out_dir, lakefile_path] + workflow_files)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
+    console.print("\nYou are all set :tada:\n")
 
 
 @cli.command()
@@ -314,14 +334,27 @@ def web() -> None:
     subprocess.run("plastex -c plastex.cfg web.tex",
                    cwd=str(blueprint_root/"src"), check=True, shell=True)
 
+@cli.command()
+def checkdecls() -> None:
+    """
+    Check that each declaration mentioned in the blueprint exists in Lean.
+    Requires to build the project and the blueprint first.
+    """
+    subprocess.run("lake exe checkdecls blueprint/lean_decls",
+                   cwd=str(blueprint_root.parent), check=True, shell=True)
+
 
 @cli.command()
 def all() -> None:
     """
-    Compile both the pdf and html versions of the blueprint using latexmk and plasTeX.
+    Compile both the pdf and html versions of the blueprint and check declarations.
     """
     pdf()
     web()
+    subprocess.run("lake build",
+                   cwd=str(blueprint_root.parent), check=True, shell=True)
+    checkdecls()
+
 
 
 @cli.command()
