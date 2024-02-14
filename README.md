@@ -91,9 +91,9 @@ will be in the `blueprint/src` subfolder of you Lean project folder.
 
 Here you will find two main TeX files: `web.tex` and `print.tex`. The first one
 is intended for plasTeX while the second one is intended for a traditional TeX
-compiler such as `xelatex` or `lualatex` (or even `pdflatex` if you are stuck in
-the 90’s). Each of them includes `macros/common.tex` for all TeX macros that
-make sense for both kinds of outputs (this should be most of your macros). 
+compiler such as `xelatex` or `lualatex`. 
+Each of them includes `macros/common.tex` for all TeX macros that make sense
+for both kinds of outputs (this should be most of your macros). 
 Macros that should behave differently depending on the target format should go
 to either `macros/web.tex` or `macros/print.tex`. All those files already exist
 and contains comments reminding you about the above explanations.
