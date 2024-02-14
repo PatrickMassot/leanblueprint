@@ -34,12 +34,13 @@ this plugin as any other plasTeX plugin, using
 In order to use the `leanblueprint` tool, you need to already have a Lean
 project created using lake. In addition, your blueprint will be easier to
 configure if you have at least one commit in the git repository of your project
-and you already configured its GitHub git remote (GitHub displays instructions
-allowing to do the remote setup when you create a new repository there). You
-should also tell GitHub that you want to use GitHub pages using GitHub actions.
-You can do that from the GitHub page of your repository by clicking on the
-Settings tab in the top menu, then the Pages link in the side menu and selecting
-GitHub Actions as the source, as in the following screenshot.
+and you have already configured its GitHub git remote (GitHub displays
+instructions allowing to do the remote setup when you create a new repository
+there). You should also tell GitHub that you want to use GitHub pages using
+GitHub actions. You can do that from the GitHub page of your repository by
+clicking on the Settings tab in the top menu, then the Pages link in the side
+menu and selecting GitHub Actions as the source, as in the following
+screenshot.
 
 ![GitHub pages settings](github_settings.png)
 
@@ -78,7 +79,9 @@ build your blueprint locally. The available commands are:
 * `leanblueprint all` to run the previous three commands.
 * `leanblueprint serve` to start a local webserver showing your local blueprint
   (this sounds silly but web browsers paranoia makes it impossible to simply
-  open the generated html pages without serving them).
+  open the generated html pages without serving them). The url you should use
+  in your browser will be displayed and will probably be `http://0.0.0.0:8000/`,
+  unless the port 8000 is already is use.
 
 ## Editing the blueprint
 
@@ -89,7 +92,7 @@ will be in the `blueprint/src` subfolder of you Lean project folder.
 Here you will find two main TeX files: `web.tex` and `print.tex`. The first one
 is intended for plasTeX while the second one is intended for a traditional TeX
 compiler such as `xelatex` or `lualatex` (or even `pdflatex` if you are stuck in
-the 90’s). Each of then includes `macros/common.tex` for all TeX macros which
+the 90’s). Each of them includes `macros/common.tex` for all TeX macros that
 make sense for both kinds of outputs (this should be most of your macros). 
 Macros that should behave differently depending on the target format should go
 to either `macros/web.tex` or `macros/print.tex`. All those files already exist
@@ -109,6 +112,30 @@ The main TeX macros that relate your TeX code to your Lean code are:
   an environment could be either a definition/statement or a proof, depending on
   whether the referenced labels are necessary to state the definition/theorem
   or only in the proof.
+
+The example below show those essential macros in action, assuming the existence of
+LaTeX labels `def:immersion`, `thm:open_ample` and `lem:open_ample_immersion` and
+assuming the existence of a Lean declaration `sphere_eversion`.
+
+```latex
+\begin{theorem}[Smale 1958]
+  \label{thm:sphere_eversion}
+  \lean{sphere_eversion}
+  \leanok
+  \uses{def:immersion}
+  There is a homotopy of immersions of $𝕊^2$ into $ℝ^3$ from the inclusion map to
+  the antipodal map $a : q ↦ -q$.
+\end{theorem}
+  
+\begin{proof}
+  \leanok
+  \uses{thm:open_ample, lem:open_ample_immersion}
+  This obviously follows from what we did so far.
+\end
+```
+
+Note that the proof above is abbreviated in this documentation. 
+Be nice to you and your collaborators and include more details in your blueprint proofs!
 
 The above macros are by far the most important, but there are a couple more.
 
