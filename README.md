@@ -143,6 +143,13 @@ The above macros are by far the most important, but there are a couple more.
   typically because it requires more blueprint work.
 * `\discussion` gives a GitHub issue number where the surrounding definition or
   statement is discussed.
-* `\proves` inside a proof environement gives the LaTeX label of the LaTeX
+* `\proves` inside a proof environment gives the LaTeX label of the LaTeX
   statement being proved. This is necessary only when the proof does not
   immediately follow the statement.
+
+## Acknowledgments
+
+The continuous integration configuration template used by `leanblueprint new`
+is based on the work of many people who had to write such a configuration by
+hand in the past, including Yakov Pechersky, Ben Toner, Sky Wilshaw, Yaël Dillies
+and Utensil Song.
