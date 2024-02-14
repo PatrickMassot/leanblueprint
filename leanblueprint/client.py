@@ -2,6 +2,7 @@ import http.server
 import logging
 import os
 import re
+import shutil
 import socketserver
 import subprocess
 import sys
@@ -319,6 +320,8 @@ def mk_pdf() -> None:
     (blueprint_root/"print").mkdir(exist_ok=True)
     subprocess.run("latexmk -output-directory=../print", cwd=str(
         blueprint_root/"src"), check=True, shell=True)
+    for bbl in (blueprint_root/"print").glob("*.bbl"):
+        shutil.copy(bbl, blueprint_root/"src")
 
 @cli.command()
 def pdf() -> None:
@@ -342,6 +345,7 @@ def web() -> None:
 def do_checkdecls() -> None:
     subprocess.run("lake exe checkdecls blueprint/lean_decls",
                    cwd=str(blueprint_root.parent), check=True, shell=True)
+
 @cli.command()
 def checkdecls() -> None:
     """
