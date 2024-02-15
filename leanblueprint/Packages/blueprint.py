@@ -263,10 +263,12 @@ def ProcessOptions(options, document):
             fillcolor = colors['proved'][0]
         elif can_prove and (can_state or stated):
             fillcolor = colors['can_prove'][0]
-        if stated and item_kind(node) == 'definition':
-            fillcolor = colors['defined'][0]
-
-        if fully_proved:
+        if item_kind(node) == 'definition':
+            if stated:
+                fillcolor = colors['defined'][0]
+            elif can_state:
+                fillcolor = colors['can_state'][0]
+        elif fully_proved:
             fillcolor = colors['fully_proved'][0]
         return fillcolor
 
