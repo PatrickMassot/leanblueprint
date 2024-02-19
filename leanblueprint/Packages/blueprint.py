@@ -215,7 +215,7 @@ def ProcessOptions(options, document):
                     node.userdata['proved'] = False
 
             for node in nodes:
-                node.userdata['fully_proved'] = all(n.userdata['proved'] or item_kind(
+                node.userdata['fully_proved'] = all(n.userdata.get('proved', False) or item_kind(
                     n) == 'definition' for n in graph.ancestors(node).union({node}))
 
         lean_decls_path = Path(document.userdata['working-dir']).parent/"lean_decls"
