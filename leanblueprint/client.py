@@ -181,7 +181,7 @@ def new() -> None:
             if m:
                 libs.append(m.group(1).strip("«» "))
                 if found_default:
-                    default_lib = m.group(1)
+                    default_lib = m.group(1).strip("«» ")
             found_default = bool(default_re.match(line))
     if not libs:
         warning(
