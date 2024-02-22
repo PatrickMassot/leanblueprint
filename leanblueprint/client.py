@@ -170,6 +170,7 @@ def new() -> None:
     lakefile_path = Path(repo.working_dir)/"lakefile.lean"
     if not lakefile_path.exists():
         error("Could not find lakefile.lean in {repo.working_dir}")
+    manifest_path = Path(repo.working_dir)/"lake-manifest.json"
     libs = []
     lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
     default_re = re.compile(r"@\[default_target\]")
@@ -286,7 +287,9 @@ def new() -> None:
                default=True):
         with lakefile_path.open("a") as lf:
             lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
-        console.print("Ok, lakefile is edited.")
+        console.print("Ok, lakefile is edited. Will now get the declaration check library.")
+        subprocess.run("lake update checkdecls",
+                       cwd=str(blueprint_root.parent), check=False, shell=True)
 
     if confirm("Modify lakefile to allow building the documentation on GitHub?",
                default=True):
@@ -315,7 +318,7 @@ def new() -> None:
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([out_dir, lakefile_path] + workflow_files)
+    repo.index.add([out_dir, lakefile_path, manifest_path] + workflow_files)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
