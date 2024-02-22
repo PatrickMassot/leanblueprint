@@ -243,7 +243,7 @@ def new() -> None:
     config['github'] = ask("Url of github repository", default=github)
     config['home'] = ask("Url of project website", default=githubIO)
     config['dochome'] = ask(
-        "Url of project API documentation", default=doc_home)
+        "Url of project API documentation", default=doc_home)
 
     console.print("\nLaTeX settings for the pdf version", style="title")
     config['documentclass'] = ask("LaTeX document class", default="report")
