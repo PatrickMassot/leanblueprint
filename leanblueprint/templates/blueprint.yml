@@ -22,6 +22,9 @@ jobs:
       - name: Install elan
         run: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain leanprover/lean4:4.5.0
 
+      - name: Update checkdecls
+        run: ~/.elan/bin/lake update checkdecls
+
       - name: Get cache
         run: ~/.elan/bin/lake -Kenv=dev exe cache get || true
 
