@@ -1,6 +1,7 @@
 import http.server
 import logging
 import os
+import platform
 import re
 import shutil
 import socketserver
@@ -274,8 +275,12 @@ def new() -> None:
         path.parent.mkdir(exist_ok=True)
         tpl.stream(config).dump(str(path))
 
-    console.print(
-        "\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
+    if platform.system() == 'Windows':
+        console.print(
+            "\nBlueprint source sucessfully created in the blueprint folder.\n")
+    else:
+        console.print(
+            "\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
 
     if confirm("Modify lakefile to allow checking declarations exist?",
                default=True):
@@ -285,7 +290,7 @@ def new() -> None:
 
     if confirm("Modify lakefile to allow building the documentation on GitHub?",
                default=True):
-        with lakefile_path.open("a") as lf:
+        with lakefile_path.open("a", encoding="utf8") as lf:
             lf.write(dedent('''
 
                 meta if get_config? env = some "dev" then
@@ -314,7 +319,10 @@ def new() -> None:
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
-    console.print("\nYou are all set :tada:\n")
+    if platform.system() == 'Windows':
+        console.print("\nYou are all set!\n")
+    else:
+        console.print("\nYou are all set :tada:\n")
 
 def mk_pdf() -> None:
     (blueprint_root/"print").mkdir(exist_ok=True)
