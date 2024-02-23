@@ -237,8 +237,11 @@ def new() -> None:
 
     console.print("\nGeneral information about the project", style="title")
     config['title'] = ask("Project title", default="My formalization project")
-    config['lib_name'] = ask(
-        "Lean library name", choices=libs, default=default_lib or libs[0])
+    if len(libs) > 1:
+        config['lib_name'] = ask(
+            "Lean library name", choices=libs, default=default_lib or libs[0])
+    else:
+        config['lib_name'] = default=default_lib or libs[0]
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
