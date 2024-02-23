@@ -321,8 +321,7 @@ def new() -> None:
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([str(p) for p in 
-        [out_dir, lakefile_path, manifest_path] + workflow_files])
+    repo.index.add([out_dir, lakefile_path, manifest_path] + workflow_files)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
