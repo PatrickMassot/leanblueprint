@@ -167,8 +167,9 @@ default layout).
     * `can_prove`, `#A3D6FF`, `Blue`
     * `defined`, `#B0ECA3`, `Light green`
     * `fully_proved`, `#1CAC78`, `Dark green`
-  In particular you can use the description to interpret the node type by
-  comparison with the default legend.
+
+    In particular you can use the description to interpret the node type by
+    comparison with the default legend.
 
 ## Acknowledgments
 
