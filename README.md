@@ -147,6 +147,29 @@ The above macros are by far the most important, but there are a couple more.
   statement being proved. This is necessary only when the proof does not
   immediately follow the statement.
 
+## Blueprint configuration
+
+Most of the configuration is handled during the blueprint creation if you used
+the `leanblueprint` client. But some of it can be changed by LaTeX macros
+in the web version of LaTeX preamble (in the file `web.tex` if you use the
+default layout).
+
+* `\home{url}` defines the url of the home page of the project.
+* `\github{url}` defines the url of the git repository of the project.
+* `\dochome{url}` defines the url of the doc-gen API documentation of the
+  project.
+* `\graphcolor{node_type}{color}{description}` sets a color in the dependency
+  graph and its description in the legend. The default values are
+    * `stated`, `green`, `Green`
+    * `can_state`, `blue`, `Blue`
+    * `not_ready`, `#FFAA33`, `Orange`
+    * `proved`, `#9CEC8B`, `Green`
+    * `can_prove`, `#A3D6FF`, `Blue`
+    * `defined`, `#B0ECA3`, `Light green`
+    * `fully_proved`, `#1CAC78`, `Dark green`
+  In particular you can use the description to interpret the node type by
+  comparison with the default legend.
+
 ## Acknowledgments
 
 The continuous integration configuration template used by `leanblueprint new`
