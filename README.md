@@ -168,8 +168,8 @@ default layout).
     * `defined`, `#B0ECA3`, `Light green`
     * `fully_proved`, `#1CAC78`, `Dark green`
 
-    In particular you can use the description to interpret the node type by
-    comparison with the default legend.
+    In particular you can use the above color descriptions to interpret the node
+    type by comparison with the default legend.
 
 ## Acknowledgments
 
