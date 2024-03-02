@@ -57,6 +57,20 @@ class dochome(Command):
         return []
 
 
+class graphcolor(Command):
+    r"""\graphcolor{node_type}{color}{color_descr}"""
+    args = 'node_type:str color:str color_descr:str'
+
+    def digest(self, tokens):
+        Command.digest(self, tokens)
+        attrs = self.attributes
+        colors = self.ownerDocument.userdata['dep_graph']['colors']
+        node_type = attrs['node_type']
+        if node_type not in colors:
+            log.warning(f'Unknown node type {node_type}')
+        colors[node_type] = (attrs['color'].strip(), attrs['color_descr'].strip())
+
+
 class leanok(Command):
     r"""\leanok"""
 
@@ -100,7 +114,7 @@ class discussion(Command):
 
     def digest(self, tokens):
         Command.digest(self, tokens)
-        self.parentNode.setUserData(
+        self.parentnode.setuserdata(
             'issue', self.attributes['issue'].lstrip('#').strip())
 
 
@@ -275,18 +289,27 @@ def ProcessOptions(options, document):
     document.userdata['dep_graph']['colorizer'] = colorizer
     document.userdata['dep_graph']['fillcolorizer'] = fillcolorizer
 
-    document.userdata['dep_graph']['legend'].extend([
-        (f"{document.userdata['dep_graph']['colors']['can_state'][1]} border",
-         "the <em>statement</em> of this result is ready to be formalized; all prerequisites are done"),
-        (f"{document.userdata['dep_graph']['colors']['not_ready'][1]} border",
-            "the <em>statement</em> of this result is not ready to be formalized; the blueprint needs more work"),
-        (f"{document.userdata['dep_graph']['colors']['can_state'][1]} background",
-            "the <em>proof</em> of this result is ready to be formalized; all prerequisites are done"),
-        (f"{document.userdata['dep_graph']['colors']['proved'][1]} border",
-            "the <em>statement</em> of this result is formalized"),
-        (f"{document.userdata['dep_graph']['colors']['proved'][1]} background",
-            "the <em>proof</em> of this result is formalized"),
-        (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", "the <em>proof</em> of this result and all its ancestors are formalized")])
+    def make_legend() -> None:
+        """
+        Extend the dependency graph legend defined by the depgraph plugin
+        by adding information specific to Lean blueprints. This is registered
+        as a post-parse callback to allow users to redefine colors and their 
+        descriptions.
+        """
+        document.userdata['dep_graph']['legend'].extend([
+            (f"{document.userdata['dep_graph']['colors']['can_state'][1]} border",
+             "the <em>statement</em> of this result is ready to be formalized; all prerequisites are done"),
+            (f"{document.userdata['dep_graph']['colors']['not_ready'][1]} border",
+                "the <em>statement</em> of this result is not ready to be formalized; the blueprint needs more work"),
+            (f"{document.userdata['dep_graph']['colors']['can_state'][1]} background",
+                "the <em>proof</em> of this result is ready to be formalized; all prerequisites are done"),
+            (f"{document.userdata['dep_graph']['colors']['proved'][1]} border",
+                "the <em>statement</em> of this result is formalized"),
+            (f"{document.userdata['dep_graph']['colors']['proved'][1]} background",
+                "the <em>proof</em> of this result is formalized"),
+            (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", "the <em>proof</em> of this result and all its ancestors are formalized")])
+
+    document.addPostParseCallbacks(150, make_legend)
 
     document.userdata.setdefault(
         'thm_header_extras_tpl', []).extend([CHECKMARK_TPL])
