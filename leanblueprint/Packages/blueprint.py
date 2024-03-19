@@ -114,7 +114,7 @@ class discussion(Command):
 
     def digest(self, tokens):
         Command.digest(self, tokens)
-        self.parentnode.setuserdata(
+        self.parentNode.setUserData(
             'issue', self.attributes['issue'].lstrip('#').strip())
 
 
