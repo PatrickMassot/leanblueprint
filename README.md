@@ -83,6 +83,10 @@ build your blueprint locally. The available commands are:
   in your browser will be displayed and will probably be `http://0.0.0.0:8000/`,
   unless the port 8000 is already is use.
 
+Note: plasTeX does not call BibTeX. If you have a bibliography, you should use
+`leanblueprint pdf` before `leanblueprint web` to get it to work in the web
+version (and redo it when you add a reference).
+
 ## Editing the blueprint
 
 Assuming you used the `leanblueprint` command line tool to create your blueprint

@@ -334,9 +334,10 @@ def mk_pdf() -> None:
     (blueprint_root/"print").mkdir(exist_ok=True)
     subprocess.run("latexmk -output-directory=../print", cwd=str(
         blueprint_root/"src"), check=True, shell=True)
-    for bbl in (blueprint_root/"print").glob("*.bbl"):
-        shutil.copy(bbl, blueprint_root/"src")
-
+    bbl_path = blueprint_root/"print"/"print.bbl"
+    if bbl_path.exists():
+        shutil.copy(bbl_path, blueprint_root/"src"/"web.bbl")
+    
 @cli.command()
 def pdf() -> None:
     """
