@@ -222,7 +222,7 @@ def new() -> None:
     if out_dir.exists():
         error("There is already a blueprint folder. Aborting blueprint creation.")
 
-    console.print("We will now ask some questions to configure your blueprint. All answers can ce changed later by editing either the plastex.cfg file or the tex files.")
+    console.print("We will now ask some questions to configure your blueprint. All answers can be changed later by editing either the plastex.cfg file or the tex files.")
     config: Dict[str, Any] = dict()
 
     if 'master' in repo.branches:
@@ -281,10 +281,10 @@ def new() -> None:
 
     if platform.system() == 'Windows':
         console.print(
-            "\nBlueprint source sucessfully created in the blueprint folder.\n")
+            "\nBlueprint source successfully created in the blueprint folder.\n")
     else:
         console.print(
-            "\nBlueprint source sucessfully created in the blueprint folder :tada:\n")
+            "\nBlueprint source successfully created in the blueprint folder :tada:\n")
 
     if confirm("Modify lakefile to allow checking declarations exist?",
                default=True):
