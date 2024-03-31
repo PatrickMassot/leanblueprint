@@ -302,7 +302,9 @@ def new() -> None:
                 meta if get_config? env = some "dev" then
                 require «doc-gen4» from git
                   "https://github.com/leanprover/doc-gen4" @ "main"'''))
-        console.print("Ok, lakefile is edited.")
+        console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
+        subprocess.run("lake -R -Kenv=dev update",
+                       cwd=str(blueprint_root.parent), check=False, shell=True)
 
 
     workflow_files: List[Path] = []
