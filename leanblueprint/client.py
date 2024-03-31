@@ -290,10 +290,8 @@ def new() -> None:
                default=True):
         with lakefile_path.open("a") as lf:
             lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
-        console.print("Ok, lakefile is edited. Will now get the declaration check library.")
-        subprocess.run("lake update checkdecls",
-                       cwd=str(blueprint_root.parent), check=False, shell=True)
-
+        console.print("Ok, lakefile is edited.")
+        
     if confirm("Modify lakefile to allow building the documentation on GitHub?",
                default=True):
         with lakefile_path.open("a", encoding="utf8") as lf:
@@ -304,6 +302,9 @@ def new() -> None:
                   "https://github.com/leanprover/doc-gen4" @ "main"'''))
         console.print("Ok, lakefile is edited.")
 
+    console.print("Updating dependencies.")
+    subprocess.run("lake -R -Kenv=dev update",
+                    cwd=str(blueprint_root.parent), check=False, shell=True)
 
     workflow_files: List[Path] = []
     if can_try_ci and confirm("Configure continuous integration to compile blueprint?",
