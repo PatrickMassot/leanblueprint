@@ -91,7 +91,7 @@ version (and redo it when you add a reference).
 
 Assuming you used the `leanblueprint` command line tool to create your blueprint
 (or at least that you use the same file layout), the source of your blueprint
-will be in the `blueprint/src` subfolder of you Lean project folder.
+will be in the `blueprint/src` subfolder of your Lean project folder.
 
 Here you will find two main TeX files: `web.tex` and `print.tex`. The first one
 is intended for plasTeX while the second one is intended for a traditional TeX
