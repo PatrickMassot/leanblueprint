@@ -17,6 +17,14 @@ pip install git+https://github.com/PatrickMassot/leanblueprint.git@client
 Note this will automatically install plasTeX and the other needed python
 packages.
 
+## Upgrading
+
+```
+pip install -U leanblueprint
+```
+
+will upgrade to the latest version.
+
 ## Starting a blueprint
 
 This package provides a command line tool `leanblueprint` that automates in
