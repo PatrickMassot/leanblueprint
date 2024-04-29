@@ -12,7 +12,7 @@ See https://pygraphviz.github.io/documentation/stable/install.html otherwise.
 
 Then, assuming you have a sane python environment, you only need to run:
 ```
-pip install git+https://github.com/PatrickMassot/leanblueprint.git@client
+pip install leanblueprint
 ```
 Note this will automatically install plasTeX and the other needed python
 packages.
