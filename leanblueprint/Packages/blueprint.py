@@ -281,7 +281,7 @@ def ProcessOptions(options, document):
             if stated:
                 fillcolor = colors['defined'][0]
             elif can_state:
-                fillcolor = colors['can_state'][0]
+                fillcolor = colors['can_prove'][0]
         elif fully_proved:
             fillcolor = colors['fully_proved'][0]
         return fillcolor
