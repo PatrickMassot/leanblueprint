@@ -241,7 +241,7 @@ def new() -> None:
         config['lib_name'] = ask(
             "Lean library name", choices=libs, default=default_lib or libs[0])
     else:
-        config['lib_name'] = default=default_lib or libs[0]
+        config['lib_name'] = default_lib or libs[0]
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
@@ -286,15 +286,18 @@ def new() -> None:
         console.print(
             "\nBlueprint source successfully created in the blueprint folder :tada:\n")
 
-    if confirm("Modify lakefile to allow checking declarations exist?",
+    console.print("\nLake configuration updating", style="title")
+    console.print("The next two questions are crucial for the blueprint infrastructure. Please use the default answer unless you are really sure you already did the necessary work.")
+
+    if confirm("Modify lakefile and lake-manifest to allow checking declarations exist?",
                default=True):
         with lakefile_path.open("a") as lf:
             lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
-        console.print("Ok, lakefile is edited. Will now get the declaration check library.")
+        console.print("Ok, lakefile is edited. Will now get the declaration check library. Note this may be long if you just created the project and did not yet get Mathlib.")
         subprocess.run("lake update checkdecls",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
 
-    if confirm("Modify lakefile to allow building the documentation on GitHub?",
+    if confirm("Modify lakefile and lake-manifest to allow building the documentation?",
                default=True):
         with lakefile_path.open("a", encoding="utf8") as lf:
             lf.write(dedent('''
@@ -302,7 +305,9 @@ def new() -> None:
                 meta if get_config? env = some "dev" then
                 require «doc-gen4» from git
                   "https://github.com/leanprover/doc-gen4" @ "main"'''))
-        console.print("Ok, lakefile is edited.")
+        console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
+        subprocess.run("lake -R -Kenv=dev update doc-gen4",
+                       cwd=str(blueprint_root.parent), check=False, shell=True)
 
 
     workflow_files: List[Path] = []
