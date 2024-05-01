@@ -1,7 +1,24 @@
 # Lean blueprints
 
 This is a [plasTeX](https://github.com/plastex/plastex/) plugin allowing
-to write blueprints for Lean 4 projects.
+to write blueprints for Lean 4 projects. 
+You can learn what those blueprints are about by reading 
+Terence Tao’s excellent [blog post about it](https://terrytao.wordpress.com/2023/11/18/formalizing-the-proof-of-pfr-in-lean4-using-blueprint-a-short-tour/).
+
+This infrastructure was originally created in 2020 for the 
+[Sphere Eversion Project](https://leanprover-community.github.io/sphere-eversion/). 
+Since then, it has been used by many projects. The list below will give you many
+examples but is not intended to be exhaustive.
+It is in approximate chronological order.
+
+* [Sphere eversion project](https://leanprover-community.github.io/sphere-eversion/blueprint/index.html).
+* [Liquid tensor experiment](https://leanprover-community.github.io/liquid/)
+* [Fermat’s last theorem for regular primes](https://leanprover-community.github.io/flt-regular/blueprint/)
+* [Arithmetic Progressions - Almost Periodicity](https://yaeldillies.github.io/LeanAPAP/blueprint/)
+* [Polynomial Freiman-Ruzsa Conjecture](https://teorth.github.io/pfr/blueprint/)
+* [Lower bounds for hypothesis testing based on information theory](https://remydegenne.github.io/testing-lower-bounds/blueprint/)
+* [Prime number theorem and…](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/)
+* [Fermat’s last theorem](https://imperialcollegelondon.github.io/FLT/blueprint/)
 
 ## Installation
 
