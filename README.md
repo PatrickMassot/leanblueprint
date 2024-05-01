@@ -18,6 +18,7 @@ It is in approximate chronological order.
 * [Polynomial Freiman-Ruzsa Conjecture](https://teorth.github.io/pfr/blueprint/)
 * [Lower bounds for hypothesis testing based on information theory](https://remydegenne.github.io/testing-lower-bounds/blueprint/)
 * [Prime number theorem and…](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/)
+* [Fermat's Last Theorem for 3](https://pitmonticone.github.io/FLT3/blueprint)
 * [Fermat’s last theorem](https://imperialcollegelondon.github.io/FLT/blueprint/)
 
 ## Installation
