@@ -11,7 +11,7 @@ Since then, it has been used by many projects. The list below will give you many
 examples but is not intended to be exhaustive.
 It is in approximate chronological order.
 
-* [Sphere eversion project](https://leanprover-community.github.io/sphere-eversion/blueprint/index.html).
+* [Sphere eversion project](https://leanprover-community.github.io/sphere-eversion/blueprint/index.html)
 * [Liquid tensor experiment](https://leanprover-community.github.io/liquid/)
 * [Fermat’s last theorem for regular primes](https://leanprover-community.github.io/flt-regular/blueprint/)
 * [Arithmetic Progressions - Almost Periodicity](https://yaeldillies.github.io/LeanAPAP/blueprint/)
