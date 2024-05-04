@@ -1,12 +1,12 @@
 # Lean blueprints
 
 This is a [plasTeX](https://github.com/plastex/plastex/) plugin allowing
-to write blueprints for Lean 4 projects. 
-You can learn what those blueprints are about by reading 
+to write blueprints for Lean 4 projects.
+You can learn what those blueprints are about by reading
 Terence Tao’s excellent [blog post about it](https://terrytao.wordpress.com/2023/11/18/formalizing-the-proof-of-pfr-in-lean4-using-blueprint-a-short-tour/).
 
-This infrastructure was originally created in 2020 for the 
-[Sphere Eversion Project](https://leanprover-community.github.io/sphere-eversion/). 
+This infrastructure was originally created in 2020 for the
+[Sphere Eversion Project](https://leanprover-community.github.io/sphere-eversion/).
 Since then, it has been used by many projects. The list below will give you many
 examples but is not intended to be exhaustive.
 It is in approximate chronological order.
@@ -53,7 +53,7 @@ setup. As every one–size-fits-all tool, it is fairly opinionated. It assumes i
 particular that your project repository is hosted on Github and you want to host
 its blueprint on github.io.
 
-If you don’t want to use the `leanblueprint` command line tool, you can use use
+If you don’t want to use the `leanblueprint` command line tool, you can use
 this plugin as any other plasTeX plugin, using
 `plastex --plugins leanblueprint my_file.tex` (not recommended).
 
@@ -107,7 +107,7 @@ build your blueprint locally. The available commands are:
   (this sounds silly but web browsers paranoia makes it impossible to simply
   open the generated html pages without serving them). The url you should use
   in your browser will be displayed and will probably be `http://0.0.0.0:8000/`,
-  unless the port 8000 is already is use.
+  unless the port 8000 is already in use.
 
 Note: plasTeX does not call BibTeX. If you have a bibliography, you should use
 `leanblueprint pdf` before `leanblueprint web` to get it to work in the web
