@@ -167,6 +167,18 @@ assuming the existence of a Lean declaration `sphere_eversion`.
 Note that the proof above is abbreviated in this documentation. 
 Be nice to you and your collaborators and include more details in your blueprint proofs!
 
+By default, the dependency graph will collect the environments definition,
+lemma, proposition, theorem and corollary. You can change this list using the
+`thms` option which expects a list of environment names separated by `+` signs. 
+For instance you can write
+```latex
+\usepackage[thms=dfn+lem+prop+thm+cor]{blueprint}
+```
+if you like short environment names. See the 
+[plastexdepgraph documentation](https://github.com/PatrickMassot/plastexdepgraph/blob/master/README.md) 
+for other dependency graph options having nothing to do with Lean.
+
+
 The above macros are by far the most important, but there are a couple more.
 
 * `\notready` which claims the surrounding environment is not ready to be formalized,
