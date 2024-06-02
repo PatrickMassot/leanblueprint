@@ -11,6 +11,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from textwrap import dedent
+from abc import ABC, abstractmethod
 
 import rich_click as click
 from git.exc import GitCommandError, InvalidGitRepositoryError
@@ -65,6 +66,83 @@ class CustomMultiCommand(click.RichGroup):
             return click.Group.get_command(self, ctx, matches[0])
         ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
+
+class Lakefile(ABC):
+    def __init__(self, path:Path):
+        self.path = path
+
+    @abstractmethod
+    def parse_libs(self) -> List[str]:
+        """
+        Extract list of libraries from the lakefile. If the lakefile has a
+        default target, it will be the first element of the returned list.
+        """
+        pass
+
+    @abstractmethod
+    def add_checkdecls(self) -> None:
+        """Update the lakefile to add a requirement for checkdecls"""
+        pass
+
+    @abstractmethod
+    def add_docgen(self) -> None:
+        """Update the lakefile to add a requirement for docgen"""
+        pass
+
+class LakefileLean(Lakefile):
+    def __init__(self, lakefile_lean:Path):
+        super().__init__(lakefile_lean)
+
+    def parse_libs(self) -> List[str]:
+        """see `super.parse_libs`"""
+        libs = []
+        lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
+        default_re = re.compile(r"@\[default_target\]")
+        found_default = False
+        with self.path.open("r", encoding="utf8") as lf:
+            for line in lf:
+                m = lib_re.match(line)
+                if m:
+                    lib_name = m.group(1).strip("«» ")
+                    if found_default:
+                        libs.insert(0,lib_name)
+                    else:
+                        libs.append(lib_name)
+                found_default = bool(default_re.match(line))
+        return libs
+
+    def add_checkdecls(self) -> None:
+        """see `super.add_checkdecls`"""
+        with self.path.open("a") as lf:
+            lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
+
+    def add_docgen(self) -> None:
+        """see `super.add_docgen"""
+        with self.path.open("a", encoding="utf8") as lf:
+            lf.write(dedent('''
+
+                meta if get_config? env = some "dev" then
+                require «doc-gen4» from git
+                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
+
+class LakefileToml(Lakefile):
+    def __init__(self, lakefile_toml:Path):
+        super().__init__(lakefile_toml)
+
+    def parse_libs(self) -> List[str]:
+        """see `super.parse_libs`"""
+        # TODO
+        error("lakefile.toml is not currently supported")
+
+    def add_checkdecls(self) -> None:
+        """see `super.add_checkdecls`"""
+        # TODO
+        error("lakefile.toml is not currently supported")
+
+    def add_docgen(self) -> None:
+        """see `super.add_docgen"""
+        # TODO
+        error("lakefile.toml is not currently supported")
 
 debug = False
 
@@ -124,6 +202,8 @@ def cli(python_debug: bool) -> None:
     debug = python_debug
 
 
+# locate repo
+
 repo: Optional[Repo] = None
 try:
     repo = Repo(".", search_parent_directories=True)
@@ -131,40 +211,27 @@ except InvalidGitRepositoryError:
     error("Could not find a Lean project. Please run this command from inside your project folder.")
 
 assert repo is not None
-if not (Path(repo.working_dir)/"lakefile.lean").exists() and not (Path(repo.working_dir)/"lakefile.toml").exists():
-    error("Could not find a Lean project. Please run this command from inside your project folder.")
+
+# locate lakefile
+
+lakefile_lean_path = Path(repo.working_dir)/"lakefile.lean"
+lakefile_toml_path = Path(repo.working_dir)/"lakefile.toml"
+
+lakefile: Optional[Lakefile] = None
+
+if lakefile_lean_path.exists() and lakefile_toml_path.exists():
+    warning("Both lakefile.lean and lakefile.toml exist; using lakefile.lean")
+    lakefile = LakefileLean(lakefile_lean_path)
+elif lakefile_lean_path.exists():
+    lakefile = LakefileLean(lakefile_lean_path)
+elif lakefile_toml_path.exists():
+    lakefile = LakefileToml(lakefile_toml_path)
+else:
+    error("Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
+
+# blueprint root directory
 
 blueprint_root = Path(repo.working_dir)/"blueprint"
-
-def parse_lakefile_lean(lakefile_lean:Path) -> List[str]:
-    """
-    Extract list of libraries from the `lakefile.lean` file stored at
-    `lakefile_lean`. If the lakefile has a `@[default_target]`, it will be the
-    first element of the returned list.
-    """
-    libs = []
-    lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
-    default_re = re.compile(r"@\[default_target\]")
-    found_default = False
-    with lakefile_path.open("r", encoding="utf8") as lf:
-        for line in lf:
-            m = lib_re.match(line)
-            if m:
-                lib_name = m.group(1).strip("«» ")
-                if found_default:
-                    libs.insert(0,lib_name)
-                else:
-                    libs.append(lib_name)
-            found_default = bool(default_re.match(line))
-    return libs
-
-def parse_lakefile_toml(lakefile_toml:Path) -> List[str]:
-    """
-    Extract list of libraries from the `lakefile.toml` file stored at
-    `lakefile_toml`. If the lakefile has a `@[default_target]`, it will be the
-    first element of the returned list.
-    """
-    error("lakefile.toml files are not yet supported")
 
 @cli.command()
 def new() -> None:
@@ -198,20 +265,7 @@ def new() -> None:
 
     # Will now locate and parse lakefile
 
-    lakefile_lean_path = Path(repo.working_dir)/"lakefile.lean"
-    lakefile_toml_path = Path(repo.working_dir)/"lakefile.toml"
-
-    libs = []
-    if lakefile_lean_path.exists() and lakefile_toml_path.exists():
-        warning("Both lakefile.lean and lakefile.toml exist; using lakefile.lean")
-        libs = parse_lakefile_lean(lakefile_lean_path)
-    elif lakefile_lean_path.exists():
-        libs = parse_lakefile_lean(lakefile_lean_path)
-    elif lakefile_toml_path.exists():
-        libs = parse_lakefile_toml(lakefile_toml_path)
-    else:
-        error("Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
-
+    libs = lakefile.parse_libs()
     if not libs:
         warning(
             "Could not find Lean library names in lakefile. Will not propose to setup continuous integration.")
@@ -321,20 +375,14 @@ def new() -> None:
 
     if confirm("Modify lakefile and lake-manifest to allow checking declarations exist?",
                default=True):
-        with lakefile_path.open("a") as lf:
-            lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
+        lakefile.add_checkdecls()
         console.print("Ok, lakefile is edited. Will now get the declaration check library. Note this may be long if you just created the project and did not yet get Mathlib.")
         subprocess.run("lake update checkdecls",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
 
     if confirm("Modify lakefile and lake-manifest to allow building the documentation?",
                default=True):
-        with lakefile_path.open("a", encoding="utf8") as lf:
-            lf.write(dedent('''
-
-                meta if get_config? env = some "dev" then
-                require «doc-gen4» from git
-                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
+        lakefile.add_docgen()
         console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
         subprocess.run("lake -R -Kenv=dev update doc-gen4",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
@@ -356,7 +404,7 @@ def new() -> None:
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([out_dir, lakefile_path, manifest_path] + workflow_files)
+    repo.index.add([out_dir, lakefile.path, manifest_path] + workflow_files)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
