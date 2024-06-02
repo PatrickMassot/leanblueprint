@@ -7,6 +7,7 @@ import shutil
 import socketserver
 import subprocess
 import sys
+import tomlkit
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -127,22 +128,43 @@ class LakefileLean(Lakefile):
 
 class LakefileToml(Lakefile):
     def __init__(self, lakefile_toml:Path):
+        with self.path.open("r", encoding="utf8") as lf:
+            self._toml = tomlkit.load(lf)
         super().__init__(lakefile_toml)
 
     def parse_libs(self) -> List[str]:
         """see `super.parse_libs`"""
-        # TODO
-        error("lakefile.toml is not currently supported")
+        defaults = self._toml.get('defaultTargets', [])
+        libs = []
+        for lib in self._toml["lean_lib"]:
+            if lib['name'] in defaults:
+                libs.insert(0, lib['name'])
+            else:
+                libs.append(lib['name'])
+
+        return libs
 
     def add_checkdecls(self) -> None:
         """see `super.add_checkdecls`"""
-        # TODO
-        error("lakefile.toml is not currently supported")
+        self._add_require("checkdecls", "https://github.com/PatrickMassot/checkdecls.git")
 
     def add_docgen(self) -> None:
-        """see `super.add_docgen"""
-        # TODO
-        error("lakefile.toml is not currently supported")
+        """see `super.add_docgen`"""
+        self._add_require("doc-gen4", "https://github.com/leanprover/doc-gen4")
+
+    def _add_require(self, name:str, git:str) -> None:
+        """Add a [[require]] to self._toml and dump it"""
+        require = tomlkit.aot()
+        require["name"] = name
+        require["git"]  = git
+
+        self._toml.append("require", require)
+        self._dump_toml()
+
+    def _dump_toml(self) -> None:
+        """replace the contents of self.path with self._toml"""
+        with self.path.open("w", encoding="utf8") as lf:
+            tomlkit.dump(self._toml)
 
 debug = False
 
@@ -227,7 +249,7 @@ elif lakefile_lean_path.exists():
 elif lakefile_toml_path.exists():
     lakefile = LakefileToml(lakefile_toml_path)
 else:
-    error("Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
+    error(f"Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
 
 # blueprint root directory
 
@@ -263,7 +285,6 @@ def new() -> None:
             # This will happen if there is no commit in the repo.
             name = "Anonymous"
 
-    # Will now locate and parse lakefile
 
     libs = lakefile.parse_libs()
     if not libs:
