@@ -8,6 +8,7 @@ import socketserver
 import subprocess
 import sys
 import tomlkit
+import tomlkit.toml_file
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -128,8 +129,8 @@ class LakefileLean(Lakefile):
 
 class LakefileToml(Lakefile):
     def __init__(self, lakefile_toml:Path):
-        with self.path.open("r", encoding="utf8") as lf:
-            self._toml = tomlkit.load(lf)
+        self._file = tomlkit.toml_file.TOMLFile(lakefile_toml)
+        self._toml = self._file.read()
         super().__init__(lakefile_toml)
 
     def parse_libs(self) -> List[str]:
@@ -150,21 +151,20 @@ class LakefileToml(Lakefile):
 
     def add_docgen(self) -> None:
         """see `super.add_docgen`"""
-        self._add_require("doc-gen4", "https://github.com/leanprover/doc-gen4")
+        warning("lakefile.toml does not currently support conditional imports; adding doc-gen4 as a project dependency")
+        warning("  see https://leanprover.zulipchat.com/#narrow/stream/341532-lean4-dev/topic/doc-gen4.20post.204.2E8.2E0-rc1")
+        self._add_require("«doc-gen4»", "https://github.com/leanprover/doc-gen4", rev="main")
 
-    def _add_require(self, name:str, git:str) -> None:
+    def _add_require(self, name:str, git:str, rev:Optional[str] = None) -> None:
         """Add a [[require]] to self._toml and dump it"""
         require = tomlkit.aot()
-        require["name"] = name
-        require["git"]  = git
+        item = {'name':name,'git':git}
+        if rev:
+            item['rev'] = rev
+        require.append(tomlkit.item(item))
 
         self._toml.append("require", require)
-        self._dump_toml()
-
-    def _dump_toml(self) -> None:
-        """replace the contents of self.path with self._toml"""
-        with self.path.open("w", encoding="utf8") as lf:
-            tomlkit.dump(self._toml)
+        self._file.write(self._toml)
 
 debug = False
 
@@ -344,9 +344,9 @@ def new() -> None:
     config['title'] = ask("Project title", default="My formalization project")
     if len(libs) > 1:
         config['lib_name'] = ask(
-            "Lean library name", choices=libs, default=default_lib or libs[0])
+            "Lean library name", choices=libs, default=libs[0])
     else:
-        config['lib_name'] = default_lib or libs[0]
+        config['lib_name'] = libs[0]
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
