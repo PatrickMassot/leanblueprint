@@ -131,11 +131,40 @@ except InvalidGitRepositoryError:
     error("Could not find a Lean project. Please run this command from inside your project folder.")
 
 assert repo is not None
-if not (Path(repo.working_dir)/"lakefile.lean").exists():
+if not (Path(repo.working_dir)/"lakefile.lean").exists() and not (Path(repo.working_dir)/"lakefile.toml").exists():
     error("Could not find a Lean project. Please run this command from inside your project folder.")
 
 blueprint_root = Path(repo.working_dir)/"blueprint"
 
+def parse_lakefile_lean(lakefile_lean:Path) -> List[str]:
+    """
+    Extract list of libraries from the `lakefile.lean` file stored at
+    `lakefile_lean`. If the lakefile has a `@[default_target]`, it will be the
+    first element of the returned list.
+    """
+    libs = []
+    lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
+    default_re = re.compile(r"@\[default_target\]")
+    found_default = False
+    with lakefile_path.open("r", encoding="utf8") as lf:
+        for line in lf:
+            m = lib_re.match(line)
+            if m:
+                lib_name = m.group(1).strip("«» ")
+                if found_default:
+                    libs.insert(0,lib_name)
+                else:
+                    libs.append(lib_name)
+            found_default = bool(default_re.match(line))
+    return libs
+
+def parse_lakefile_toml(lakefile_toml:Path) -> List[str]:
+    """
+    Extract list of libraries from the `lakefile.toml` file stored at
+    `lakefile_toml`. If the lakefile has a `@[default_target]`, it will be the
+    first element of the returned list.
+    """
+    error("lakefile.toml files are not yet supported")
 
 @cli.command()
 def new() -> None:
@@ -156,7 +185,7 @@ def new() -> None:
     if repo.is_dirty():
         error("The repository contains uncommitted changes. Please clean it up before creating a blueprint.")
 
-    # Will no try to guess the author name
+    # Will now try to guess the author name
     try:
         name = repo.git.config("user.name")
     except GitCommandError:
@@ -167,27 +196,28 @@ def new() -> None:
             # This will happen if there is no commit in the repo.
             name = "Anonymous"
 
-    lakefile_path = Path(repo.working_dir)/"lakefile.lean"
-    if not lakefile_path.exists():
-        error("Could not find lakefile.lean in {repo.working_dir}")
-    manifest_path = Path(repo.working_dir)/"lake-manifest.json"
+    # Will now locate and parse lakefile
+
+    lakefile_lean_path = Path(repo.working_dir)/"lakefile.lean"
+    lakefile_toml_path = Path(repo.working_dir)/"lakefile.toml"
+
     libs = []
-    lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
-    default_re = re.compile(r"@\[default_target\]")
-    default_lib = ""
-    found_default = False
-    with lakefile_path.open("r", encoding="utf8") as lf:
-        for line in lf:
-            m = lib_re.match(line)
-            if m:
-                libs.append(m.group(1).strip("«» "))
-                if found_default:
-                    default_lib = m.group(1).strip("«» ")
-            found_default = bool(default_re.match(line))
+    if lakefile_lean_path.exists() and lakefile_toml_path.exists():
+        warning("Both lakefile.lean and lakefile.toml exist; using lakefile.lean")
+        libs = parse_lakefile_lean(lakefile_lean_path)
+    elif lakefile_lean_path.exists():
+        libs = parse_lakefile_lean(lakefile_lean_path)
+    elif lakefile_toml_path.exists():
+        libs = parse_lakefile_toml(lakefile_toml_path)
+    else:
+        error("Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
+
     if not libs:
         warning(
             "Could not find Lean library names in lakefile. Will not propose to setup continuous integration.")
         can_try_ci = False
+
+    manifest_path = Path(repo.working_dir)/"lake-manifest.json"
 
     # Will now try to guess the GitHub url
     github = ""
