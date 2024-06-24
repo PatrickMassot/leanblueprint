@@ -7,10 +7,13 @@ import shutil
 import socketserver
 import subprocess
 import sys
+import tomlkit
+import tomlkit.toml_file
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional, NoReturn
 from textwrap import dedent
+from abc import ABC, abstractmethod
 
 import rich_click as click
 from git.exc import GitCommandError, InvalidGitRepositoryError
@@ -65,6 +68,103 @@ class CustomMultiCommand(click.RichGroup):
             return click.Group.get_command(self, ctx, matches[0])
         ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
 
+
+class Lakefile(ABC):
+    def __init__(self, path:Path):
+        self.path = path
+
+    @abstractmethod
+    def parse_libs(self) -> List[str]:
+        """
+        Extract list of libraries from the lakefile. If the lakefile has a
+        default target, it will be the first element of the returned list.
+        """
+        pass
+
+    @abstractmethod
+    def add_checkdecls(self) -> None:
+        """Update the lakefile to add a requirement for checkdecls"""
+        pass
+
+    @abstractmethod
+    def add_docgen(self) -> None:
+        """Update the lakefile to add a requirement for docgen"""
+        pass
+
+class LakefileLean(Lakefile):
+    def __init__(self, lakefile_lean:Path):
+        super().__init__(lakefile_lean)
+
+    def parse_libs(self) -> List[str]:
+        """see `super.parse_libs`"""
+        libs = []
+        lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
+        default_re = re.compile(r"@\[default_target\]")
+        found_default = False
+        with self.path.open("r", encoding="utf8") as lf:
+            for line in lf:
+                m = lib_re.match(line)
+                if m:
+                    lib_name = m.group(1).strip("«» ")
+                    if found_default:
+                        libs.insert(0,lib_name)
+                    else:
+                        libs.append(lib_name)
+                found_default = bool(default_re.match(line))
+        return libs
+
+    def add_checkdecls(self) -> None:
+        """see `super.add_checkdecls`"""
+        with self.path.open("a") as lf:
+            lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
+
+    def add_docgen(self) -> None:
+        """see `super.add_docgen"""
+        with self.path.open("a", encoding="utf8") as lf:
+            lf.write(dedent('''
+
+                meta if get_config? env = some "dev" then
+                require «doc-gen4» from git
+                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
+
+class LakefileToml(Lakefile):
+    def __init__(self, lakefile_toml:Path):
+        self._file = tomlkit.toml_file.TOMLFile(lakefile_toml)
+        self._toml = self._file.read()
+        super().__init__(lakefile_toml)
+
+    def parse_libs(self) -> List[str]:
+        """see `super.parse_libs`"""
+        defaults = self._toml.get('defaultTargets', [])
+        libs = []
+        for lib in self._toml["lean_lib"]:
+            if lib['name'] in defaults:
+                libs.insert(0, lib['name'])
+            else:
+                libs.append(lib['name'])
+
+        return libs
+
+    def add_checkdecls(self) -> None:
+        """see `super.add_checkdecls`"""
+        self._add_require("checkdecls", "https://github.com/PatrickMassot/checkdecls.git")
+
+    def add_docgen(self) -> None:
+        """see `super.add_docgen`"""
+        warning("lakefile.toml does not currently support conditional imports; adding doc-gen4 as a project dependency")
+        warning("  see https://leanprover.zulipchat.com/#narrow/stream/341532-lean4-dev/topic/doc-gen4.20post.204.2E8.2E0-rc1")
+        self._add_require("«doc-gen4»", "https://github.com/leanprover/doc-gen4", rev="main")
+
+    def _add_require(self, name:str, git:str, rev:Optional[str] = None) -> None:
+        """Add a [[require]] to self._toml and dump it"""
+        require = tomlkit.aot()
+        item = {'name':name,'git':git}
+        if rev:
+            item['rev'] = rev
+        require.append(tomlkit.item(item))
+
+        self._toml.append("require", require)
+        self._file.write(self._toml)
 
 debug = False
 
@@ -124,6 +224,8 @@ def cli(python_debug: bool) -> None:
     debug = python_debug
 
 
+# locate repo
+
 repo: Optional[Repo] = None
 try:
     repo = Repo(".", search_parent_directories=True)
@@ -131,11 +233,27 @@ except InvalidGitRepositoryError:
     error("Could not find a Lean project. Please run this command from inside your project folder.")
 
 assert repo is not None
-if not (Path(repo.working_dir)/"lakefile.lean").exists():
-    error("Could not find a Lean project. Please run this command from inside your project folder.")
+
+# locate lakefile
+
+lakefile_lean_path = Path(repo.working_dir)/"lakefile.lean"
+lakefile_toml_path = Path(repo.working_dir)/"lakefile.toml"
+
+lakefile: Optional[Lakefile] = None
+
+if lakefile_lean_path.exists() and lakefile_toml_path.exists():
+    warning("Both lakefile.lean and lakefile.toml exist; using lakefile.lean")
+    lakefile = LakefileLean(lakefile_lean_path)
+elif lakefile_lean_path.exists():
+    lakefile = LakefileLean(lakefile_lean_path)
+elif lakefile_toml_path.exists():
+    lakefile = LakefileToml(lakefile_toml_path)
+else:
+    error(f"Could not find lakefile.lean or lakefile.toml in {repo.working_dir}")
+
+# blueprint root directory
 
 blueprint_root = Path(repo.working_dir)/"blueprint"
-
 
 @cli.command()
 def new() -> None:
@@ -155,7 +273,7 @@ def new() -> None:
     if repo.is_dirty():
         error("The repository contains uncommitted changes. Please clean it up before creating a blueprint.")
 
-    # Will no try to guess the author name
+    # Will now try to guess the author name
     try:
         name = repo.git.config("user.name")
     except GitCommandError:
@@ -166,27 +284,14 @@ def new() -> None:
             # This will happen if there is no commit in the repo.
             name = "Anonymous"
 
-    lakefile_path = Path(repo.working_dir)/"lakefile.lean"
-    if not lakefile_path.exists():
-        error("Could not find lakefile.lean in {repo.working_dir}")
-    manifest_path = Path(repo.working_dir)/"lake-manifest.json"
-    libs = []
-    lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
-    default_re = re.compile(r"@\[default_target\]")
-    default_lib = ""
-    found_default = False
-    with lakefile_path.open("r", encoding="utf8") as lf:
-        for line in lf:
-            m = lib_re.match(line)
-            if m:
-                libs.append(m.group(1).strip("«» "))
-                if found_default:
-                    default_lib = m.group(1).strip("«» ")
-            found_default = bool(default_re.match(line))
+
+    libs = lakefile.parse_libs()
     if not libs:
         warning(
             "Could not find Lean library names in lakefile. Will not propose to setup continuous integration.")
         can_try_ci = False
+
+    manifest_path = Path(repo.working_dir)/"lake-manifest.json"
 
     # Will now try to guess the GitHub url
     github = ""
@@ -238,9 +343,9 @@ def new() -> None:
     config['title'] = ask("Project title", default="My formalization project")
     if len(libs) > 1:
         config['lib_name'] = ask(
-            "Lean library name", choices=libs, default=default_lib or libs[0])
+            "Lean library name", choices=libs, default=libs[0])
     else:
-        config['lib_name'] = default_lib or libs[0]
+        config['lib_name'] = libs[0]
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
@@ -290,20 +395,14 @@ def new() -> None:
 
     if confirm("Modify lakefile and lake-manifest to allow checking declarations exist?",
                default=True):
-        with lakefile_path.open("a") as lf:
-            lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
+        lakefile.add_checkdecls()
         console.print("Ok, lakefile is edited. Will now get the declaration check library. Note this may be long if you just created the project and did not yet get Mathlib.")
         subprocess.run("lake update checkdecls",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
 
     if confirm("Modify lakefile and lake-manifest to allow building the documentation?",
                default=True):
-        with lakefile_path.open("a", encoding="utf8") as lf:
-            lf.write(dedent('''
-
-                meta if get_config? env = some "dev" then
-                require «doc-gen4» from git
-                  "https://github.com/leanprover/doc-gen4" @ "main"'''))
+        lakefile.add_docgen()
         console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
         subprocess.run("lake -R -Kenv=dev update doc-gen4",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
@@ -325,7 +424,7 @@ def new() -> None:
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([out_dir, lakefile_path, manifest_path] + workflow_files)
+    repo.index.add([out_dir, lakefile.path, manifest_path] + workflow_files)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
