@@ -9,7 +9,7 @@ import subprocess
 import sys
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, NoReturn
 from textwrap import dedent
 
 import rich_click as click
@@ -108,7 +108,7 @@ def warning(msg: str) -> None:
     console.print(f"[warning]Warning:[/] {msg}")
 
 
-def error(msg: str) -> None:
+def error(msg: str) -> NoReturn:
     console.print(f"[error]Error:[/] {msg}")
     sys.exit(1)
 
@@ -151,7 +151,6 @@ def new() -> None:
 
     if repo is None:
         error("Could not find a Lean project. Please run this command from inside your project folder.")
-    assert repo is not None
 
     if repo.is_dirty():
         error("The repository contains uncommitted changes. Please clean it up before creating a blueprint.")
@@ -225,9 +224,9 @@ def new() -> None:
     console.print("We will now ask some questions to configure your blueprint. All answers can be changed later by editing either the plastex.cfg file or the tex files.")
     config: Dict[str, Any] = dict()
 
-    if 'master' in repo.branches:
+    if 'master' in repo.heads:
         config['master_branch'] = "master"
-    elif 'main' in repo.branches:
+    elif 'main' in repo.heads:
         config['master_branch'] = "main"
     else:
         config['master_branch'] = ask("\nName of your main Git branch")
