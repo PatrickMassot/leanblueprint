@@ -8,7 +8,8 @@ import socketserver
 import subprocess
 import sys
 import tomlkit
-import tomlkit.toml_file
+from tomlkit.toml_file import TOMLFile
+from tomlkit import TOMLDocument
 from collections import deque
 from pathlib import Path
 from typing import Any, Dict, List, Optional, NoReturn
@@ -70,7 +71,7 @@ class CustomMultiCommand(click.RichGroup):
 
 
 class Lakefile(ABC):
-    def __init__(self, path:Path):
+    def __init__(self, path: Path):
         self.path = path
 
     @abstractmethod
@@ -92,12 +93,12 @@ class Lakefile(ABC):
         pass
 
 class LakefileLean(Lakefile):
-    def __init__(self, lakefile_lean:Path):
+    def __init__(self, lakefile_lean: Path):
         super().__init__(lakefile_lean)
 
     def parse_libs(self) -> List[str]:
         """see `super.parse_libs`"""
-        libs = []
+        libs: List[str] = []
         lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
         default_re = re.compile(r"@\[default_target\]")
         found_default = False
@@ -128,16 +129,16 @@ class LakefileLean(Lakefile):
                   "https://github.com/leanprover/doc-gen4" @ "main"'''))
 
 class LakefileToml(Lakefile):
-    def __init__(self, lakefile_toml:Path):
-        self._file = tomlkit.toml_file.TOMLFile(lakefile_toml)
-        self._toml = self._file.read()
+    def __init__(self, lakefile_toml: Path):
+        self._file = TOMLFile(lakefile_toml)
+        self._toml: TOMLDocument = self._file.read()
         super().__init__(lakefile_toml)
 
     def parse_libs(self) -> List[str]:
         """see `super.parse_libs`"""
         defaults = self._toml.get('defaultTargets', [])
-        libs = []
-        for lib in self._toml["lean_lib"]:
+        libs: List[str] = []
+        for lib in self._toml.get("lean_lib", []):
             if lib['name'] in defaults:
                 libs.insert(0, lib['name'])
             else:
@@ -151,8 +152,6 @@ class LakefileToml(Lakefile):
 
     def add_docgen(self) -> None:
         """see `super.add_docgen`"""
-        warning("lakefile.toml does not currently support conditional imports; adding doc-gen4 as a project dependency")
-        warning("  see https://leanprover.zulipchat.com/#narrow/stream/341532-lean4-dev/topic/doc-gen4.20post.204.2E8.2E0-rc1")
         self._add_require("«doc-gen4»", "https://github.com/leanprover/doc-gen4", rev="main")
 
     def _add_require(self, name:str, git:str, rev:Optional[str] = None) -> None:
@@ -260,6 +259,7 @@ def new() -> None:
     """
     Create a new Lean blueprint in the given repository.
     """
+    assert lakefile is not None
     loader = FileSystemLoader(Path(__file__).parent/"templates")
     env = Environment(loader=loader, variable_start_string='{|', variable_end_string='|}',
                       comment_start_string='{--', comment_end_string='--}')
