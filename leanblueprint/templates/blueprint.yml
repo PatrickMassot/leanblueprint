@@ -15,7 +15,7 @@ jobs:
     name: Build project
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -29,7 +29,7 @@ jobs:
         run: ~/.elan/bin/lake build {| lib_name |}
 
       - name: Cache mathlib docs
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .lake/build/doc/Init
@@ -78,13 +78,13 @@ jobs:
           cp -r .lake/build/doc docs/docs
 
       - name: Upload docs & blueprint artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs/
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
 
       - name: Make sure the cache works
         run: |
