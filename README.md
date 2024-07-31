@@ -218,4 +218,4 @@ default layout).
 The continuous integration configuration template used by `leanblueprint new`
 is based on the work of many people who had to write such a configuration by
 hand in the past, including Yakov Pechersky, Ben Toner, Sky Wilshaw, Yaël Dillies
-and Utensil Song.
+and Utensil Song. It also got contributions from Pietro Monticone.
