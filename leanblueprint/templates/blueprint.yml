@@ -87,9 +87,7 @@ jobs:
             ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
 
       - name: Copy API documentation to `docs/docs`
-        run: |
-          sudo chown -R runner docs
-          cp -r .lake/build/doc docs/docs
+        run: cp -r .lake/build/doc docs/docs
 
       - name: Remove unnecessary lake files from documentation in `docs/docs`
         run: |
