@@ -50,18 +50,18 @@ jobs:
       - name: Build project API documentation
         run: ~/.elan/bin/lake -R -Kenv=dev build {| lib_name |}:docs
       
-      - name: Check for existing `docs` folder # this is meant to detect a Jekyll-based website
-        id: check_docs
+      - name: Check for `home_page` folder # this is meant to detect a Jekyll-based website
+        id: check_home_page
         run: |
-          if [ -d docs ]; then
-            echo "The 'docs' folder already exists in the repository."
-            echo "DOCS_EXIST=true" >> $GITHUB_ENV
+          if [ -d home_page ]; then
+            echo "The 'home_page' folder exists in the repository."
+            echo "HOME_PAGE_EXISTS=true" >> $GITHUB_ENV
           else
-            echo "The 'docs' folder does not exist in the repository."
-            echo "DOCS_EXIST=false" >> $GITHUB_ENV
+            echo "The 'home_page' folder does not exist in the repository."
+            echo "HOME_PAGE_EXISTS=false" >> $GITHUB_ENV
           fi
 
-      - name: Build blueprint and copy to `docs/blueprint`
+      - name: Build blueprint and copy to `home_page/blueprint`
         uses: xu-cheng/texlive-action@v2
         with:
           docker_image: ghcr.io/xu-cheng/texlive-full:20231201
@@ -77,46 +77,44 @@ jobs:
             pip install pygraphviz --global-option=build_ext --global-option="-L/usr/lib/graphviz/" --global-option="-R/usr/lib/graphviz/"
             pip install leanblueprint
             leanblueprint pdf
-            mkdir -p docs
-            cp blueprint/print/print.pdf docs/blueprint.pdf
+            mkdir -p home_page
+            cp blueprint/print/print.pdf home_page/blueprint.pdf
             leanblueprint web
-            cp -r blueprint/web docs/blueprint
+            cp -r blueprint/web home_page/blueprint
 
       - name: Check declarations mentioned in the blueprint exist in Lean code
         run: |
             ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
 
-      - name: Copy API documentation to `docs/docs`
-        run: |
-          sudo chown -R runner docs
-          cp -r .lake/build/doc docs/docs
+      - name: Copy API documentation to `home_page/docs`
+        run: cp -r .lake/build/doc home_page/docs
 
-      - name: Remove unnecessary lake files from documentation in `docs/docs`
+      - name: Remove unnecessary lake files from documentation in `home_page/docs`
         run: |
-          find docs/docs -name "*.trace" -delete
-          find docs/docs -name "*.hash" -delete
+          find home_page/docs -name "*.trace" -delete
+          find home_page/docs -name "*.hash" -delete
 
       - name: Bundle dependencies
         uses: ruby/setup-ruby@v1
         with:
-          working-directory: docs
+          working-directory: home_page
           ruby-version: "3.0"  # Specify Ruby version
           bundler-cache: true  # Enable caching for bundler
 
       - name: Build website using Jekyll
-        if: env.DOCS_EXIST == 'true'
-        working-directory: docs
-        run: JEKYLL_ENV=production bundle exec jekyll build  # Note this will also copy the blueprint and API doc into docs/_site
+        if: env.HOME_PAGE_EXISTS == 'true'
+        working-directory: home_page
+        run: JEKYLL_ENV=production bundle exec jekyll build  # Note this will also copy the blueprint and API doc into home_page/_site
 
-      - name: Upload docs & blueprint artifact
+      - name: "Upload website (API documentation, blueprint and any home page)"
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.DOCS_EXIST == 'true' && 'docs/_site' || 'docs/' }}
+          path: ${{ env.HOME_PAGE_EXISTS == 'true' && 'home_page/_site' || 'home_page/' }}
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Make sure the cache works
-        run: mv docs/docs .lake/build/doc
+      - name: Make sure the API documentation cache works
+        run: mv home_page/docs .lake/build/doc
      
