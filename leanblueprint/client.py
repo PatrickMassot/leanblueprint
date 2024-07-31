@@ -417,7 +417,8 @@ def new() -> None:
         if jekyll_out_dir.exists():
             error("There is already a home_page folder. Aborting.")
         author = config['author'].replace("\\and", "and") 
-        config['subtitle'] = ask("Home page subtitle?", default=f"by {author}") 
+        config['web_title'] = ask("Home page title?", default=config["title"])
+        config['web_subtitle'] = ask("Home page subtitle?", default=f"by {author}") 
         config['jekyll_theme'] = ask("Jekyll theme? (see https://github.com/pages-themes)", default="pages-themes/cayman@v0.2.0") 
         jekyll_out_dir.mkdir()
         for tpl_name in jekyll_env.list_templates():
