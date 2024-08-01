@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: " en-US" }}">
+<html lang="{{ site.lang | default: 'en-US' }}">
 
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   {% if jekyll.environment == "production" %}
   <link rel="stylesheet"
-    href="{{ 'FLT3/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    href="{{ site.github.repository_name | append: '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   {% else %}
   <link rel="stylesheet" href="{{ 'assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   {% endif %}
