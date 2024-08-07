@@ -304,15 +304,14 @@ def new() -> None:
     except ValueError:
         url = None
     if url:
-        m = re.match(r"https://github.com/(.*)/(.*)\.git", url)
+        patterns = [r"https://github.com/(.*)/(.*)\.git",
+                    r"https://github.com/(.*)/(.*)",
+                    r"git@github.com:(.*)/(.*)\.git",
+                    r"git@github.com:(.*)/(.*)"]
+        m = next(m for m in map(lambda p: re.match(p, url), patterns) if m is not None)
         if m:
             githubUserName = m.group(1)
             githubRepoName = m.group(2)
-        else:
-            m = re.match(r"git@github.com:(.*)/(.*)\.git", url)
-            if m:
-                githubUserName = m.group(1)
-                githubRepoName = m.group(2)
         if githubUserName:
             github = f"https://github.com/{githubUserName}/{githubRepoName}"
             githubIO = f"https://{githubUserName}.github.io/{githubRepoName}"
