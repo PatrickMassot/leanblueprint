@@ -408,8 +408,8 @@ def new() -> None:
     home_page_created = False
 
     if confirm("Do you want to create a home page for the project, "
-            "with links to the blueprint, the API documentation and the "
-            "repository?"):
+               "with links to the blueprint, the API documentation and the "
+               "repository?"):
         jekyll_loader = FileSystemLoader(Path(__file__).parent/"jekyll_templates")
         jekyll_env = Environment(loader=jekyll_loader, variable_start_string='{|', variable_end_string='|}',
                         comment_start_string='{--', comment_end_string='--}',
