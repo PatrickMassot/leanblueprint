@@ -404,30 +404,34 @@ def new() -> None:
         console.print("Ok, lakefile is edited. Will now get the doc-gen library.")
         subprocess.run("lake -R -Kenv=dev update doc-gen4",
                        cwd=str(blueprint_root.parent), check=False, shell=True)
+        
+    home_page_created = False
 
     if confirm("Do you want to create a home page for the project, "
-               "with links to the blueprint, the API documentation and the "
-               "repository?"):
+            "with links to the blueprint, the API documentation and the "
+            "repository?"):
         jekyll_loader = FileSystemLoader(Path(__file__).parent/"jekyll_templates")
         jekyll_env = Environment(loader=jekyll_loader, variable_start_string='{|', variable_end_string='|}',
-                          comment_start_string='{--', comment_end_string='--}',
-                          block_start_string='{%|', block_end_string='|%}')
+                        comment_start_string='{--', comment_end_string='--}',
+                        block_start_string='{%|', block_end_string='|%}')
         jekyll_out_dir = Path(repo.working_dir)/"home_page"
         if jekyll_out_dir.exists():
             error("There is already a home_page folder. Aborting.")
-        author = config['author'].replace("\\and", "and") 
-        config['web_title'] = ask("Home page title?", default=config["title"])
-        config['web_subtitle'] = ask("Home page subtitle?", default=f"by {author}") 
-        config['jekyll_theme'] = ask("Jekyll theme? (see https://github.com/pages-themes)", default="pages-themes/cayman@v0.2.0") 
-        jekyll_out_dir.mkdir()
-        for tpl_name in jekyll_env.list_templates():
-            print(f"Handling {tpl_name}")
-            tpl = jekyll_env.get_template(tpl_name)
-            path = jekyll_out_dir/tpl_name
-            path.parent.mkdir(parents=True, exist_ok=True)
-            tpl.stream(config).dump(str(path))
-        console.print("Ok, the home page template is created in `home_page`.")
-        console.print("The main file you want to edit there is `index.md`.")
+        else:
+            home_page_created = True  
+            author = config['author'].replace("\\and", "and") 
+            config['web_title'] = ask("Home page title?", default=config["title"])
+            config['web_subtitle'] = ask("Home page subtitle?", default=f"by {author}") 
+            config['jekyll_theme'] = ask("Jekyll theme? (see https://github.com/pages-themes)", default="pages-themes/cayman@v0.2.0") 
+            jekyll_out_dir.mkdir()
+            for tpl_name in jekyll_env.list_templates():
+                print(f"Handling {tpl_name}")
+                tpl = jekyll_env.get_template(tpl_name)
+                path = jekyll_out_dir/tpl_name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tpl.stream(config).dump(str(path))
+            console.print("Ok, the home page template is created in `home_page`.")
+            console.print("The main file you want to edit there is `index.md`.")
 
     workflow_files: List[Path] = []
     if can_try_ci and confirm("Configure continuous integration to compile blueprint?",
@@ -440,12 +444,17 @@ def new() -> None:
             f"GitHub workflow file created at {path/'blueprint.yml'}")
         workflow_files.append(path/'blueprint.yml')
 
+    files_to_add = [out_dir, lakefile.path, manifest_path] + workflow_files
+
+    if home_page_created:
+        files_to_add.append(jekyll_out_dir)
+
     if not confirm("\nCommit to git repository?"):
         console.print("You are all set! Don’t forget to commit whenever you feel ready.")
         sys.exit(0)
 
     msg = ask("Commit message", default="Setup blueprint")
-    repo.index.add([out_dir, lakefile.path, manifest_path] + workflow_files)
+    repo.index.add(files_to_add)
     repo.index.commit(msg)
     console.print(
         "Git commit created. Don't forget to push when you are ready.")
