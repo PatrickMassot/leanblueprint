@@ -348,10 +348,10 @@ def new() -> None:
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
 
-    config['github'] = ask("Url of github repository", default=github)
-    config['home'] = ask("Url of project website", default=githubIO)
+    config['github'] = ask("URL of GitHub repository", default=github)
+    config['home'] = ask("URL of project website", default=githubIO)
     config['dochome'] = ask(
-        "Url of project API documentation", default=doc_home)
+        "URL of project API documentation", default=doc_home)
 
     console.print("\nLaTeX settings for the pdf version", style="title")
     config['documentclass'] = ask("LaTeX document class", default="report")
