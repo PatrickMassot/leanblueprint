@@ -449,6 +449,15 @@ def new() -> None:
     if home_page_created:
         files_to_add.append(jekyll_out_dir)
 
+    # Check if the 'lean-toolchain' file exists
+    lean_toolchain_path = Path(repo.working_dir) / "lean-toolchain"
+    if lean_toolchain_path.exists():
+        # Check for differences between the 'lean-toolchain' file and the last committed version
+        diff = repo.git.diff("HEAD", "--", str(lean_toolchain_path))
+        # If there are changes (the diff is not empty), add the file to the list of files to be committed
+        if diff:
+            files_to_add.append(lean_toolchain_path)
+            
     if not confirm("\nCommit to git repository?"):
         console.print("You are all set! Don’t forget to commit whenever you feel ready.")
         sys.exit(0)
