@@ -20,6 +20,10 @@ It is in approximate chronological order.
 * [Prime number theorem and…](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/)
 * [Fermat's Last Theorem for 3](https://pitmonticone.github.io/FLT3/blueprint)
 * [Fermat’s last theorem](https://imperialcollegelondon.github.io/FLT/blueprint/)
+* [Carleson Operators on Doubling Metric Measure Spaces](http://florisvandoorn.com/carleson/)
+* [Infinity Cosmos](https://github.com/emilyriehl/infinity-cosmos)
+* [Analytic Number Theory Exponent Database](https://github.com/teorth/expdb)
+* [Equational Theories](https://github.com/teorth/equational_theories)
 
 ## Installation
 
@@ -218,4 +222,4 @@ default layout).
 The continuous integration configuration template used by `leanblueprint new`
 is based on the work of many people who had to write such a configuration by
 hand in the past, including Yakov Pechersky, Ben Toner, Sky Wilshaw, Yaël Dillies
-and Utensil Song.
+and Utensil Song. It also got contributions from Pietro Monticone.
