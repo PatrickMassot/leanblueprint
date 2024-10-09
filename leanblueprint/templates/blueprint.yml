@@ -3,7 +3,7 @@ name: Compile blueprint
 on:
   push:
     branches:
-      - main
+      - {| master_branch |} # Trigger the workflow on push to the default branch
     paths:
       - '**/*.lean'
       - '**/blueprint.yml'
@@ -14,7 +14,7 @@ on:
       - 'lake-manifest.json'
   pull_request:
     branches:
-      - main
+      - {| master_branch |} # Trigger the workflow on pull requests to the default branch
     paths:
       - '**/*.lean'
       - '**/blueprint.yml'
