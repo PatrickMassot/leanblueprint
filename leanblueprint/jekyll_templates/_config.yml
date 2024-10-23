@@ -31,3 +31,4 @@ repository: {| github_username |}/{| github_projectname |}
 remote_theme: {| jekyll_theme |} 
 plugins:
   - jekyll-remote-theme
+  - jekyll-github-metadata
