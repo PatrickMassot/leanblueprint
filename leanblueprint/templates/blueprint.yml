@@ -38,6 +38,7 @@ jobs:
 
       - name: Cache mathlib API docs
         uses: actions/cache@v4
+        working-directory: ./docbuild
         with:
           path: |
             .lake/build/doc/Init
@@ -53,7 +54,8 @@ jobs:
           restore-keys: MathlibDoc-
 
       - name: Build project API documentation
-        run: ~/.elan/bin/lake -R -Kenv=dev build {| lib_name |}:docs
+        working-directory: ./docbuild
+        run: ~/.elan/bin/lake build {| lib_name |}:docs
       
       - name: Check for `home_page` folder # this is meant to detect a Jekyll-based website
         id: check_home_page
@@ -92,7 +94,7 @@ jobs:
             ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
 
       - name: Copy API documentation to `home_page/docs`
-        run: cp -r .lake/build/doc home_page/docs
+        run: cp -r ./docbuild/.lake/build/doc home_page/docs
 
       - name: Remove unnecessary lake files from documentation in `home_page/docs`
         run: |
@@ -121,5 +123,5 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Make sure the API documentation cache works
-        run: mv home_page/docs .lake/build/doc
+        run: mv home_page/docs ./docbuild/.lake/build/doc
      
