@@ -38,18 +38,17 @@ jobs:
 
       - name: Cache mathlib API docs
         uses: actions/cache@v4
-        working-directory: ./docbuild
         with:
           path: |
-            .lake/build/doc/Init
-            .lake/build/doc/Lake
-            .lake/build/doc/Lean
-            .lake/build/doc/Std
-            .lake/build/doc/Mathlib
-            .lake/build/doc/declarations
-            .lake/build/doc/find
-            .lake/build/doc/*.*
-            !.lake/build/doc/declarations/declaration-data-{| lib_name |}*
+            ./docbuild/.lake/build/doc/Init
+            ./docbuild/.lake/build/doc/Lake
+            ./docbuild/.lake/build/doc/Lean
+            ./docbuild/.lake/build/doc/Std
+            ./docbuild/.lake/build/doc/Mathlib
+            ./docbuild/.lake/build/doc/declarations
+            ./docbuild/.lake/build/doc/find
+            ./docbuild/.lake/build/doc/*.*
+            !./docbuild/.lake/build/doc/declarations/declaration-data-{| lib_name |}*
           key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
           restore-keys: MathlibDoc-
 
