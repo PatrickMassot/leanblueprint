@@ -40,21 +40,24 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .lake/build/doc/Init
-            .lake/build/doc/Lake
-            .lake/build/doc/Lean
-            .lake/build/doc/Std
-            .lake/build/doc/Mathlib
-            .lake/build/doc/declarations
-            .lake/build/doc/find
-            .lake/build/doc/*.*
-            !.lake/build/doc/declarations/declaration-data-{| lib_name |}*
+            docbuild/.lake/build/doc/Init
+            docbuild/.lake/build/doc/Lake
+            docbuild/.lake/build/doc/Lean
+            docbuild/.lake/build/doc/Std
+            docbuild/.lake/build/doc/Mathlib
+            docbuild/.lake/build/doc/declarations
+            docbuild/.lake/build/doc/find
+            docbuild/.lake/build/doc/*.*
+            !docbuild/.lake/build/doc/declarations/declaration-data-{| lib_name |}*
           key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
           restore-keys: MathlibDoc-
 
       - name: Build project API documentation
-        run: ~/.elan/bin/lake -R -Kenv=dev build {| lib_name |}:docs
-      
+        working-directory: docbuild
+        run: |
+          MATHLIB_NO_CACHE_ON_UPDATE=1 ~/.elan/bin/lake update {| lib_name |} || true
+          ~/.elan/bin/lake build {| lib_name |}:docs
+
       - name: Check for `home_page` folder # this is meant to detect a Jekyll-based website
         id: check_home_page
         run: |
@@ -92,7 +95,7 @@ jobs:
             ~/.elan/bin/lake exe checkdecls blueprint/lean_decls
 
       - name: Copy API documentation to `home_page/docs`
-        run: cp -r .lake/build/doc home_page/docs
+        run: cp -r docbuild/.lake/build/doc home_page/docs
 
       - name: Remove unnecessary lake files from documentation in `home_page/docs`
         run: |
@@ -123,5 +126,5 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Make sure the API documentation cache works
-        run: mv home_page/docs .lake/build/doc
+        run: mv home_page/docs docbuild/.lake/build/doc
      
