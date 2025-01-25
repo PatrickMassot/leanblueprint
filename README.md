@@ -192,7 +192,7 @@ The above macros are by far the most important, but there are a couple more.
 * `\proves` inside a proof environment gives the LaTeX label of the LaTeX
   statement being proved. This is necessary only when the proof does not
   immediately follow the statement.
-* `\mathlib` marks nodes that were already merged into mathlib.
+* `\mathlibok` marks nodes that were already merged into mathlib.
 
 ## Blueprint configuration
 
