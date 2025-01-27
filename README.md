@@ -181,6 +181,8 @@ For instance you can write
 if you like short environment names. See the 
 [plastexdepgraph documentation](https://github.com/PatrickMassot/plastexdepgraph/blob/master/README.md) 
 for other dependency graph options having nothing to do with Lean.
+Note that this is giving the `depgraph` package options directly when loading
+the `blueprint` package. Do not load the `depgraph` package separately.
 
 
 The above macros are by far the most important, but there are a couple more.
