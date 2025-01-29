@@ -194,6 +194,7 @@ The above macros are by far the most important, but there are a couple more.
 * `\proves` inside a proof environment gives the LaTeX label of the LaTeX
   statement being proved. This is necessary only when the proof does not
   immediately follow the statement.
+* `\mathlibok` marks nodes that were already merged into mathlib.
 
 ## Blueprint configuration
 
@@ -215,6 +216,7 @@ default layout).
     * `can_prove`, `#A3D6FF`, `Blue`
     * `defined`, `#B0ECA3`, `Light green`
     * `fully_proved`, `#1CAC78`, `Dark green`
+    * `mathlib`, `darkgreen`, `Dark green`
 
     In particular you can use the above color descriptions to interpret the node
     type by comparison with the default legend.
