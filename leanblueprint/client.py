@@ -374,7 +374,7 @@ def new() -> None:
     out_dir.mkdir()
     (out_dir/"src").mkdir()
     for tpl_name in env.list_templates():
-        if tpl_name.endswith("blueprint.yml"):
+        if tpl_name.endswith("build.yml"):
             continue
         tpl = env.get_template(tpl_name)
         path = out_dir/"src"/tpl_name
@@ -436,13 +436,13 @@ def new() -> None:
     workflow_files: List[Path] = []
     if can_try_ci and confirm("Configure continuous integration to compile blueprint?",
                               default=True):
-        tpl = env.get_template("blueprint.yml")
+        tpl = env.get_template("build.yml")
         path = Path(repo.working_dir)/".github"/"workflows"
         path.mkdir(parents=True, exist_ok=True)
-        tpl.stream(config).dump(str(path/"blueprint.yml"))
+        tpl.stream(config).dump(str(path/"build.yml"))
         console.print(
-            f"GitHub workflow file created at {path/'blueprint.yml'}")
-        workflow_files.append(path/'blueprint.yml')
+            f"GitHub workflow file created at {path/'build.yml'}")
+        workflow_files.append(path/'build.yml')
 
     files_to_add = [out_dir, lakefile.path, manifest_path] + workflow_files
 
