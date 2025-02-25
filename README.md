@@ -165,7 +165,7 @@ assuming the existence of a Lean declaration `sphere_eversion`.
   \leanok
   \uses{thm:open_ample, lem:open_ample_immersion}
   This obviously follows from what we did so far.
-\end
+\end{proof}
 ```
 
 Note that the proof above is abbreviated in this documentation. 
