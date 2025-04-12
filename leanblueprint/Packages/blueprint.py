@@ -307,7 +307,11 @@ def ProcessOptions(options, document):
                 "the <em>statement</em> of this result is formalized"),
             (f"{document.userdata['dep_graph']['colors']['proved'][1]} background",
                 "the <em>proof</em> of this result is formalized"),
-            (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", "the <em>proof</em> of this result and all its ancestors are formalized")])
+            (f"{document.userdata['dep_graph']['colors']['fully_proved'][1]} background", 
+                "the <em>proof</em> of this result and all its ancestors are formalized"),
+            (f"{document.userdata['dep_graph']['colors']['mathlib'][1]} border",
+                "this is in Mathlib"),
+        ])
 
     document.addPostParseCallbacks(150, make_legend)
 
