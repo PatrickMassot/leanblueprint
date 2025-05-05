@@ -40,14 +40,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            docbuild/.lake/build/doc/Aesop
-            docbuild/.lake/build/doc/Batteries
-            docbuild/.lake/build/doc/find
-            docbuild/.lake/build/doc/Init
-            docbuild/.lake/build/doc/Lake
-            docbuild/.lake/build/doc/Lean
-            docbuild/.lake/build/doc/Mathlib
-            docbuild/.lake/build/doc/Std
+            .lake/build/doc/Aesop
+            .lake/build/doc/Batteries
+            .lake/build/doc/find
+            .lake/build/doc/Init
+            .lake/build/doc/Lake
+            .lake/build/doc/Lean
+            .lake/build/doc/Mathlib
+            .lake/build/doc/Std
           key: Docs-${{ hashFiles('lake-manifest.json') }}
 
       - name: Build project API documentation
