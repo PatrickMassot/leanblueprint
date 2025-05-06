@@ -36,21 +36,19 @@ jobs:
       - name: Build project
         run: ~/.elan/bin/lake build {| lib_name |}
 
-      - name: Cache mathlib API docs
+      - name: Cache API docs
         uses: actions/cache@v4
         with:
           path: |
+            .lake/build/doc/Aesop
+            .lake/build/doc/Batteries
+            .lake/build/doc/find
             .lake/build/doc/Init
             .lake/build/doc/Lake
             .lake/build/doc/Lean
-            .lake/build/doc/Std
             .lake/build/doc/Mathlib
-            .lake/build/doc/declarations
-            .lake/build/doc/find
-            .lake/build/doc/*.*
-            !.lake/build/doc/declarations/declaration-data-{| lib_name |}*
-          key: MathlibDoc-${{ hashFiles('lake-manifest.json') }}
-          restore-keys: MathlibDoc-
+            .lake/build/doc/Std
+          key: Docs-${{ hashFiles('lake-manifest.json') }}
 
       - name: Build project API documentation
         run: ~/.elan/bin/lake -R -Kenv=dev build {| lib_name |}:docs
