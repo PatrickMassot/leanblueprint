@@ -146,6 +146,15 @@ The main TeX macros that relate your TeX code to your Lean code are:
   an environment could be either a definition/statement or a proof, depending on
   whether the referenced labels are necessary to state the definition/theorem
   or only in the proof.
+* `\nodetitle` that specifies the name in text or [HTML-like labels of graphviz](https://graphviz.org/doc/inrfo/shapes.html#html)
+  displayed on the node in dependency graph. Without this macro, the label
+  specified in `\label` with prefix stripped will be displayed. This macro can
+  be used for custom content or style specially for nodes in dependency graph,
+  independent from their names in pdf and other web pages. For example, long
+  names can be splitted into multiple lines with HTML-like labels (such as
+  `\nodetitle{<the_very-<BR\>long-name-<BR\>of-a-theorem}`) to avoid badly
+  displayed graph caused by long names, and main theorems can be bolded
+  (such as `\nodetitle{<<B>An Important Theorem</B>>}`).
 
 The example below show those essential macros in action, assuming the existence of
 LaTeX labels `def:immersion`, `thm:open_ample` and `lem:open_ample_immersion` and
