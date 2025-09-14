@@ -9,14 +9,16 @@ This infrastructure was originally created in 2020 for the
 [Sphere Eversion Project](https://leanprover-community.github.io/sphere-eversion/).
 Since then, it has been used by many projects. The list below will give you many
 examples but is not intended to be exhaustive.
-It is in approximate chronological order.
+It is in approximate chronological order, at least in the beginning of the list.
 
 * [Sphere eversion project](https://leanprover-community.github.io/sphere-eversion/blueprint/index.html)
 * [Liquid tensor experiment](https://leanprover-community.github.io/liquid/)
+* [Unit fractions](https://b-mehta.github.io/unit-fractions/)
 * [Fermat’s last theorem for regular primes](https://leanprover-community.github.io/flt-regular/blueprint/)
 * [Arithmetic Progressions - Almost Periodicity](https://yaeldillies.github.io/LeanAPAP/blueprint/)
 * [Polynomial Freiman-Ruzsa Conjecture](https://teorth.github.io/pfr/blueprint/)
 * [Lower bounds for hypothesis testing based on information theory](https://remydegenne.github.io/testing-lower-bounds/blueprint/)
+* [New Foundations is consistent](https://leanprover-community.github.io/con-nf/)
 * [Prime number theorem and…](https://alexkontorovich.github.io/PrimeNumberTheoremAnd/web/)
 * [Fermat's Last Theorem for 3](https://pitmonticone.github.io/FLT3/blueprint)
 * [Fermat’s last theorem](https://imperialcollegelondon.github.io/FLT/blueprint/)
@@ -24,6 +26,27 @@ It is in approximate chronological order.
 * [Infinity Cosmos](https://github.com/emilyriehl/infinity-cosmos)
 * [Analytic Number Theory Exponent Database](https://github.com/teorth/expdb)
 * [Equational Theories](https://github.com/teorth/equational_theories)
+* [HoTTLean](https://sinhp.github.io/groupoid_model_in_lean4/)
+* [Sphere packing in Lean](https://thefundamentaltheor3m.github.io/Sphere-Packing-Lean/)
+* [Localic Caratheodory extensions](https://bergschaf.github.io/Localic-Caratheodory-Extensions)
+* [Banach Tarski](https://bergschaf.github.io/lean-banach-tarski)
+* [Bourgain extractor in Lean](https://github.com/Command-Master/lean-bourgain)
+* [Semi circle Law](https://fredraj3.github.io/SemicircleLaw/)
+* [Seymour](https://ivan-sergeyev.github.io/seymour/)
+* [STIR verification](https://leastauthority.github.io/STIR/)
+* [Central limit theorem](https://remydegenne.github.io/CLT/blueprint/)
+* [Brownian motion](https://remydegenne.github.io/brownian-motion/)
+* [Formally Verified Arguments of Knowledge](https://verified-zkevm.github.io/ArkLib/blueprint/)
+* [Chandra Furst Lipton](https://yaeldillies.github.io/ChandraFurstLipton/)
+* [Cambridge combinatorics](https://yaeldillies.github.io/LeanCamCombi/)
+* [Toric varieties in Lean](https://yaeldillies.github.io/Toric/)
+* [Iwasaw theory in Lean](https://acmepjz.github.io/lean-iwasawa/)
+* [Irrationality of ζ(3)](https://ahhwuhu.github.io/zeta_3_irrational/blueprint/)
+* [Exceptional set in the abc conjecture](https://b-mehta.github.io/ABC-Exceptions/)
+* [Analysis in Bonn](https://florisvandoorn.com/BonnAnalysis/blueprint/)
+* [Extreme Value Distribution Project](https://kkytola.github.io/ExtremeValueProject/)
+* [Formal proofs from the book](https://firsching.ch/FormalBook/)
+* [Spectral theorem](https://oliver-butterley.github.io/SpectralThm/)
 
 ## Installation
 
