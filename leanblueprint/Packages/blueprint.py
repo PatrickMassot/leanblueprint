@@ -233,7 +233,7 @@ def ProcessOptions(options, document):
                     n) == 'definition' for n in graph.ancestors(node).union({node}))
 
         lean_decls_path = Path(document.userdata['working-dir']).parent/"lean_decls"
-        lean_decls_path.write_text("\n".join(document.userdata.get("lean_decls", [])))
+        lean_decls_path.write_text("\n".join(document.userdata.get("lean_decls", [])), encoding="utf-8")
 
     document.addPostParseCallbacks(150, make_lean_data)
 
@@ -293,7 +293,7 @@ def ProcessOptions(options, document):
         """
         Extend the dependency graph legend defined by the depgraph plugin
         by adding information specific to Lean blueprints. This is registered
-        as a post-parse callback to allow users to redefine colors and their 
+        as a post-parse callback to allow users to redefine colors and their
         descriptions.
         """
         document.userdata['dep_graph']['legend'].extend([
