@@ -24,10 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     name: Build project
     steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          df -h
+
       - name: Checkout project
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Cache Lake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.elan
+            .lake/packages
+          key: deps-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json') }}
+
+      - name: Cache Lake build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake/build/lib
+            .lake/build/ir
+            .lake/build/bin
+          key: build-${{ runner.os }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            build-${{ runner.os }}-${{ github.ref }}-
+            build-${{ runner.os }}-
 
       - name: Build and lint project
         uses: leanprover/lean-action@434f25c2f80ded67bba02502ad3a86f25db50709 # 2025-07-02
@@ -35,6 +62,19 @@ jobs:
           build: true
           lint: true
           mk_all-check: true
+
+      - name: Cache API docs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake/build/doc/Mathlib
+            .lake/build/doc/Lean
+            .lake/build/doc/Init
+            .lake/build/doc/Batteries
+            .lake/build/doc/Aesop
+            .lake/build/doc/Qq
+            .lake/build/doc/Std
+          key: docs-${{ hashFiles('lake-manifest.json') }}
 
       - name: Compile blueprint and documentation
         uses: leanprover-community/docgen-action@deed0cdc44dd8e5de07a300773eb751d33e32fc8 # 2025-10-26
