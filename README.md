@@ -48,6 +48,7 @@ It is in approximate chronological order, at least in the beginning of the list.
 * [Formal proofs from the book](https://firsching.ch/FormalBook/)
 * [Spectral theorem](https://oliver-butterley.github.io/SpectralThm/)
 * [Sphere packing](https://thefundamentaltheor3m.github.io/Sphere-Packing-Lean/)
+* [Radii Polynomial](https://ilpreterosso.github.io/LEANearized-RadiiPolynomial/)
 
 ## Installation
 
