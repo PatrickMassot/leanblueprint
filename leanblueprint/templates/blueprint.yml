@@ -25,7 +25,7 @@ jobs:
     name: Build project
     steps:
       - name: Cleanup to free disk space
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.0
         with:
           tool-cache: false
           android: true
