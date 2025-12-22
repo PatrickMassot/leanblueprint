@@ -47,6 +47,7 @@ It is in approximate chronological order, at least in the beginning of the list.
 * [Extreme Value Distribution Project](https://kkytola.github.io/ExtremeValueProject/)
 * [Formal proofs from the book](https://firsching.ch/FormalBook/)
 * [Spectral theorem](https://oliver-butterley.github.io/SpectralThm/)
+* [Sphere packing](https://thefundamentaltheor3m.github.io/Sphere-Packing-Lean/)
 
 ## Installation
 
