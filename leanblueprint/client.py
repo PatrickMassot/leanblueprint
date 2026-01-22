@@ -116,7 +116,7 @@ class LakefileLean(Lakefile):
 
     def add_checkdecls(self) -> None:
         """see `super.add_checkdecls`"""
-        with self.path.open("a") as lf:
+        with self.path.open("a", encoding="utf-8") as lf:
             lf.write('\nrequire checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"')
 
     def add_docgen(self) -> None:
@@ -470,7 +470,7 @@ def mk_pdf() -> None:
     bbl_path = blueprint_root/"print"/"print.bbl"
     if bbl_path.exists():
         shutil.copy(bbl_path, blueprint_root/"src"/"web.bbl")
-    
+
 @cli.command()
 def pdf() -> None:
     """
