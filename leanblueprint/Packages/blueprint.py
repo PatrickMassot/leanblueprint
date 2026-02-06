@@ -17,8 +17,8 @@ from pathlib import Path
 from jinja2 import Template
 from plasTeX import Command
 from plasTeX.Logging import getLogger
-from plasTeX.PackageResource import PackageCss, PackageTemplateDir
-from plastexdepgraph.Packages.depgraph import item_kind
+from plasTeX.PackageResource import PackageCss, PackageTemplateDir, PackagePreCleanupCB
+from plastexdepgraph.Packages.depgraph import item_kind, DepGraph
 
 log = getLogger()
 
@@ -166,9 +166,34 @@ GITHUB_LINK_TPL = Template("""
   {%- endif -%}
 """)
 
+SUBGRAPH_LINK_TPL = Template("""
+  {% set node_id_safe = thm.id.replace(':', '_').replace('/', '_') -%}
+  {% set subgraph_url = 'subgraph_' + node_id_safe + '.html' -%}
+  <a class="subgraph_link" href="{{ subgraph_url }}">View Dependency Graph</a>
+""")
+
 
 def ProcessOptions(options, document):
     """This is called when the package is loaded."""
+
+    def subgraph(self, node):
+        """Return a subgraph containing the node and all its ancestors."""
+        if node not in self.nodes:
+            return None
+        ancestor_nodes = self.ancestors(node)
+        subgraph_nodes = ancestor_nodes.union({node})
+        sub = DepGraph()
+        sub.document = self.document
+        sub.nodes = subgraph_nodes
+        for s, t in self.edges:
+            if s in subgraph_nodes and t in subgraph_nodes:
+                sub.edges.add((s, t))
+        for s, t in self.proof_edges:
+            if s in subgraph_nodes and t in subgraph_nodes:
+                sub.proof_edges.add((s, t))
+        return sub
+
+    DepGraph.subgraph = subgraph
 
     # We want to ensure the depgraph and showmore packages are loaded.
     # We first need to make sure the corresponding plugins are used.
@@ -320,4 +345,69 @@ def ProcessOptions(options, document):
     document.userdata.setdefault('thm_header_hidden_extras_tpl', []).extend([LEAN_DECLS_TPL,
                                                                              GITHUB_ISSUE_TPL])
     document.userdata['dep_graph'].setdefault('extra_modal_links_tpl', []).extend([
-        LEAN_LINKS_TPL, GITHUB_LINK_TPL])
+        LEAN_LINKS_TPL, GITHUB_LINK_TPL, SUBGRAPH_LINK_TPL])
+
+    def make_subgraph_html(document):
+        """Generate subgraph HTML files for each node in the dependency graphs."""
+        try:
+            if 'dep_graph' not in document.userdata:
+                return []
+            graphs = document.userdata['dep_graph'].get('graphs', {})
+            if not graphs:
+                return []
+
+            from plastexdepgraph.Packages.depgraph import PKG_DIR as DEPGRAPH_PKG_DIR
+            default_tpl_path = DEPGRAPH_PKG_DIR.parent / 'templates' / 'dep_graph.html'
+            if not default_tpl_path.exists():
+                try:
+                    import plastexdepgraph
+                    depgraph_pkg_dir = Path(plastexdepgraph.__file__).parent
+                    default_tpl_path = depgraph_pkg_dir.parent / 'templates' / 'dep_graph.html'
+                except (ImportError, AttributeError):
+                    pass
+            if not default_tpl_path.exists():
+                return []
+
+            graph_tpl = Template(default_tpl_path.read_text())
+            reduce_graph = not document.userdata.get('dep_graph', {}).get('nonreducedgraph', False)
+
+            files = []
+            total_nodes = 0
+            for sec, graph in graphs.items():
+                total_nodes += len(graph.nodes)
+                for node in graph.nodes:
+                    sub = graph.subgraph(node)
+                    if sub:
+                        node_id_safe = node.id.replace(':', '_').replace('/', '_')
+                        graph_target = f'subgraph_{node_id_safe}.html'
+                        files.append(graph_target)
+                        dot = sub.to_dot(document.userdata['dep_graph'].get('shapes', {'definition': 'box'}))
+                        if reduce_graph:
+                            dot = dot.tred()
+                        node_title = node.id.split(':')[-1]
+                        if hasattr(node, 'caption') and node.caption:
+                            node_title = str(node.caption)
+                        subgraph_title = f'Dependencies of {node_title}'
+                        graph_tpl.stream(
+                            graph=sub,
+                            dot=dot.to_string(),
+                            context=document.context,
+                            title=subgraph_title,
+                            legend=document.userdata['dep_graph']['legend'],
+                            extra_modal_links=document.userdata['dep_graph'].get('extra_modal_links_tpl', []),
+                            document=document,
+                            config=document.config
+                        ).dump(graph_target)
+
+            if files:
+                log.info(f'Generated {len(files)} subgraph HTML files')
+            return files
+        except Exception as e:
+            log.warning(f'Error generating subgraphs: {e}')
+            return []
+
+    ## Subgraph generation
+    import os
+    if os.environ.get('LEANBLUEPRINT_SUBGRAPH') == '1':
+        cb = PackagePreCleanupCB(data=make_subgraph_html)
+        document.addPackageResource(cb)

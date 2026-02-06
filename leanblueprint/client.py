@@ -479,16 +479,23 @@ def pdf() -> None:
     mk_pdf()
 
 
-def mk_web() -> None:
+def mk_web(subgraph: bool = False) -> None:
     (blueprint_root/"web").mkdir(exist_ok=True)
+    env = os.environ.copy()
+    if subgraph:
+        env['LEANBLUEPRINT_SUBGRAPH'] = '1'
+    else:
+        env.pop('LEANBLUEPRINT_SUBGRAPH', None)
     subprocess.run("plastex -c plastex.cfg web.tex",
-                   cwd=str(blueprint_root/"src"), check=True, shell=True)
+                   cwd=str(blueprint_root/"src"), check=True, shell=True, env=env)
 @cli.command()
-def web() -> None:
+@click.option('--subgraph', is_flag=True, default=False,
+              help='Generate subgraph HTML files for each node showing its dependencies.')
+def web(subgraph: bool) -> None:
     """
     Compile the html version of the blueprint using plasTeX.
     """
-    mk_web()
+    mk_web(subgraph=subgraph)
 
 def do_checkdecls() -> None:
     subprocess.run("lake exe checkdecls blueprint/lean_decls",
@@ -504,12 +511,14 @@ def checkdecls() -> None:
 
 
 @cli.command()
-def all() -> None:
+@click.option('--subgraph', is_flag=True, default=False,
+              help='Generate subgraph HTML files for each node showing its dependencies.')
+def all(subgraph: bool) -> None:
     """
     Compile both the pdf and html versions of the blueprint and check declarations.
     """
     mk_pdf()
-    mk_web()
+    mk_web(subgraph=subgraph)
     subprocess.run("lake build",
                    cwd=str(blueprint_root.parent), check=True, shell=True)
     do_checkdecls()
