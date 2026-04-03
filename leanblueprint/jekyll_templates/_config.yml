@@ -21,14 +21,14 @@
 title: {| web_title |}
 #email: your-email@example.com
 description: {| web_subtitle |}
-baseurl: "" # the subpath of your site, e.g. /blog
+baseurl: "/{| github_projectname |}" # the subpath of your site, e.g. /blog
 url: "{| home |}" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username:
 github_username: {| github_username |}
 repository: {| github_username |}/{| github_projectname |}
 
 # Build settings
-remote_theme: {| jekyll_theme |} 
+remote_theme: {| jekyll_theme |}
 plugins:
   - jekyll-remote-theme
   - jekyll-github-metadata

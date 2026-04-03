@@ -5,3 +5,491 @@ a.github_link {
   color: inherit;
 }
 
+/* Wider TOC sidebar */
+@media (min-width: 1024px) {
+  nav.toc {
+    max-width: 35ch !important;
+    min-width: 30ch !important;
+  }
+}
+
+/* ============================================
+   TWO-COLUMN LAYOUT: TeX Left, Lean Right
+   ============================================
+
+   Architecture: main-text is a 2-column CSS Grid.
+   - Column 1 (left): All regular content (paragraphs, proofs, etc.)
+   - Column 2 (right): Reserved for Lean panels
+   - Theorem wrappers: Span BOTH columns, with their own internal grid
+*/
+
+/* Fix scroll issue caused by theme-white.css overflow:hidden */
+body {
+  overflow: auto !important;
+  height: auto !important;
+}
+
+div.wrapper {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* Override content wrapper constraints for wider layout */
+div.content-wrapper {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+div.content {
+  max-width: none !important;
+  padding: 1rem 2rem !important;
+  overflow: auto !important;
+}
+
+/* Main content area: 2-column grid */
+div.main-text {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 2rem; /* no row gap, 2rem column gap */
+  grid-auto-flow: row; /* Ensure items flow in rows, not filling gaps */
+}
+
+/* Default: all children go into column 1 (left) only */
+div.main-text > * {
+  grid-column: 1 / 2;  /* Explicitly column 1 only, not spanning */
+  max-width: 100%;  /* Prevent overflow */
+}
+
+/* Headings stay in column 1 (left) only */
+div.main-text > h1,
+div.main-text > h2,
+div.main-text > h3 {
+  grid-column: 1 / 2;
+}
+
+/* Theorem wrappers span BOTH columns, then use their own internal grid */
+div.main-text > .definition_thmwrapper,
+div.main-text > .theorem_thmwrapper,
+div.main-text > .lemma_thmwrapper,
+div.main-text > .proposition_thmwrapper,
+div.main-text > .corollary_thmwrapper,
+div.main-text > .remark_thmwrapper,
+div.main-text > .example_thmwrapper {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+  align-items: start;
+}
+
+/* The main theorem content takes the first (left) column */
+div.definition_thmmain,
+div.theorem_thmmain,
+div.lemma_thmmain,
+div.proposition_thmmain,
+div.corollary_thmmain,
+div.remark_thmmain,
+div.example_thmmain {
+  grid-column: 1;
+  grid-row: 1;  /* Force to first row */
+  min-width: 0;
+}
+
+/* The side panel takes the second (right) column */
+.thm_side_panel {
+  grid-column: 2;
+  grid-row: 1;  /* Force to first row, same as thmmain */
+  min-width: 0;
+}
+
+/* Hide side panel when it has no real content (only empty lean-entry divs) */
+/* Uses :has() to check for actual content */
+.thm_side_panel:not(:has(.lean-decl-box)):not(:has(.lean-statement)):not(:has(.lean-decl-link)) {
+  visibility: hidden;
+  min-height: 0;
+}
+
+/* Lean side panel styling */
+.lean-side-panel {
+  padding: 0;
+  font-size: 0.9em;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.lean-entry {
+  margin: 0.75rem 0;
+}
+
+.lean-entry:first-child {
+  margin-top: 0;
+}
+
+/* Doc-gen4 style declaration box */
+.lean-decl-box {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-left: 4px solid #22c55e;
+  border-radius: 0 6px 6px 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  position: relative;
+}
+
+/* Docs/source links in top-right corner */
+.lean-decl-links {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8em;
+}
+
+.lean-doc-link,
+.lean-src-link {
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.lean-doc-link:hover,
+.lean-src-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Doc-gen4 CSS for declaration styling */
+.lean-decl-box .decl_header {
+  text-indent: -4ex;
+  padding-left: 4ex;
+  padding-right: 5rem;
+}
+
+.lean-decl-box .decl_kind {
+  font-weight: bold;
+  color: #374151;
+}
+
+.lean-decl-box .decl_name {
+  font-weight: bold;
+  color: #1e40af;
+  overflow-wrap: break-word;
+}
+
+.lean-decl-box .decl_name a {
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.lean-decl-box .decl_name a:hover {
+  text-decoration: underline;
+}
+
+.lean-decl-box .decl_name::after {
+  content: "\A";
+  white-space: pre;
+}
+
+.lean-decl-box .decl_args {
+  font-weight: normal;
+}
+
+.lean-decl-box .impl_arg {
+  font-style: italic;
+  opacity: 0.5;
+  transition: opacity 300ms ease-in;
+}
+
+.lean-decl-box:hover .impl_arg {
+  opacity: 1;
+}
+
+.lean-decl-box .decl_type {
+  margin-top: 2px;
+  margin-left: 2ex;
+  color: #374151;
+}
+
+.lean-decl-box .fn {
+  color: #1e40af;
+}
+
+.lean-decl-box a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.lean-decl-box a:hover {
+  text-decoration: underline;
+}
+
+/* Fallback header for entries without HTML */
+.lean-entry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.lean-decl-link {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.95em;
+  font-weight: bold;
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.lean-decl-link:hover {
+  text-decoration: underline;
+  color: #3b82f6;
+}
+
+.lean-src {
+  margin-left: auto;
+  text-decoration: none;
+  font-size: 1.1em;
+  opacity: 0.7;
+}
+
+.lean-src:hover {
+  opacity: 1;
+}
+
+/* Fallback plain text statement */
+.lean-statement {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.8em;
+  line-height: 1.4;
+  color: #334155;
+  background: #f8fafc;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0 0;
+  border-radius: 3px;
+  border-left: 4px solid #22c55e;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Equations - inside decl box, no label */
+.lean-equation {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #065f46;
+  background: #ecfdf5;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0 0;
+  border-radius: 3px;
+  border-left: 3px solid #10b981;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Equation HTML with links (doc-gen style) */
+.lean-equations {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: #065f46;
+  background: #ecfdf5;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0 0;
+  border-radius: 3px;
+  border-left: 3px solid #10b981;
+  list-style: none;
+}
+
+.lean-equations li.equation {
+  margin: 0.25rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lean-equations a {
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.lean-equations a:hover {
+  text-decoration: underline;
+}
+
+.lean-equations a.blueprint-link {
+  color: #0d9488;
+  font-weight: 500;
+}
+
+.lean-equations a.blueprint-link:hover {
+  color: #0f766e;
+}
+
+/* Structure fields - styled similarly to equations */
+.lean-structure-fields {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: #1e3a5f;
+  background: #eff6ff;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0 0;
+  border-radius: 3px;
+  border-left: 3px solid #3b82f6;
+  list-style: none;
+}
+
+.lean-structure-fields li.structure_field {
+  margin: 0.4rem 0;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #dbeafe;
+}
+
+.lean-structure-fields li.structure_field:last-child {
+  border-bottom: none;
+}
+
+.lean-structure-fields .structure_field_info {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lean-structure-fields .structure_field_doc,
+.lean-structure-fields .structure_field_doc p {
+  font-size: 1.05em !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  color: #6b7280;
+  margin: 0;
+  margin-top: 0.15rem;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+/* Code elements within structure field documentation should match surrounding text size */
+.lean-structure-fields .structure_field_doc code,
+.lean-structure-fields .structure_field_doc .docstring_code {
+  font-size: inherit !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace !important;
+  font-style: normal;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  color: #1e40af;
+}
+
+.lean-structure-fields a {
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.lean-structure-fields a:hover {
+  text-decoration: underline;
+}
+
+.lean-structure-fields a.blueprint-link {
+  color: #0d9488;
+  font-weight: 500;
+}
+
+.lean-structure-fields a.blueprint-link:hover {
+  color: #0f766e;
+}
+
+/* Plain text fallback for structure fields */
+.lean-fields {
+  font-family: 'JetBrains Mono', 'Fira Code', 'JuliaMono', monospace;
+  font-size: 0.85em;
+  line-height: 1.4;
+  color: #1e3a5f;
+  background: #eff6ff;
+  padding: 0.5rem;
+  margin: 0.5rem 0 0 0;
+  border-radius: 3px;
+  border-left: 3px solid #3b82f6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Blueprint links in declaration body */
+.lean-decl-box a.blueprint-link {
+  color: #0d9488;
+  font-weight: 500;
+}
+
+.lean-decl-box a.blueprint-link:hover {
+  color: #0f766e;
+  text-decoration: underline;
+}
+
+/* Target theorem styling - prominent, highlighted */
+.lean-side-panel.lean-target .lean-decl-box {
+  border-left-width: 6px;
+  border-left-color: #2563eb;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.lean-side-panel.lean-target .lean-decl-box .decl_name,
+.lean-side-panel.lean-target .lean-decl-box .decl_name a {
+  color: #1d4ed8;
+  font-size: 1.05em;
+}
+
+/* Helper lemma styling - subtle, muted */
+.lean-side-panel.lean-helper .lean-decl-box {
+  border-left-width: 2px;
+  border-left-color: #9ca3af;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  opacity: 0.85;
+  font-size: 0.9em;
+}
+
+.lean-side-panel.lean-helper .lean-decl-box .decl_name,
+.lean-side-panel.lean-helper .lean-decl-box .decl_name a {
+  color: #4b5563;
+}
+
+.lean-side-panel.lean-helper .lean-decl-box .decl_kind {
+  color: #6b7280;
+}
+
+/* Helper can expand on hover to show full detail */
+.lean-side-panel.lean-helper .lean-decl-box:hover {
+  opacity: 1;
+}
+
+/* Responsive: single column on narrow screens */
+@media (max-width: 1200px) {
+  div.main-text {
+    display: block; /* Fall back to normal flow */
+  }
+
+  div.main-text > .definition_thmwrapper,
+  div.main-text > .theorem_thmwrapper,
+  div.main-text > .lemma_thmwrapper,
+  div.main-text > .proposition_thmwrapper,
+  div.main-text > .corollary_thmwrapper,
+  div.main-text > .remark_thmwrapper,
+  div.main-text > .example_thmwrapper {
+    display: block;
+  }
+
+  .thm_side_panel {
+    margin-top: 1rem;
+  }
+
+  .lean-side-panel {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    position: static;
+    max-height: none;
+  }
+}
