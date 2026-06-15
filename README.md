@@ -49,6 +49,7 @@ It is in approximate chronological order, at least in the beginning of the list.
 * [Spectral theorem](https://oliver-butterley.github.io/SpectralThm/)
 * [Sphere packing](https://thefundamentaltheor3m.github.io/Sphere-Packing-Lean/)
 * [Radii Polynomial](https://ilpreterosso.github.io/LEANearized-RadiiPolynomial/)
+* [Formalising AQFT in Lean](https://physicslib.github.io/physicslib4/)
 
 ## Installation
 
