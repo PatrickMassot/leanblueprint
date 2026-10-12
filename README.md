@@ -231,7 +231,10 @@ default layout).
 * `\home{url}` defines the url of the home page of the project.
 * `\github{url}` defines the url of the git repository of the project.
 * `\dochome{url}` defines the url of the doc-gen API documentation of the
-  project.
+  project. For project-local declarations, set this explicitly in
+  `web.tex`. If it is omitted, Lean links retain the historical Mathlib-docs
+  fallback, and a build warning is emitted when declarations are present.
+  This fallback does not mean your project declarations exist in Mathlib.
 * `\graphcolor{node_type}{color}{description}` sets a color in the dependency
   graph and its description in the legend. The default values are
     * `stated`, `green`, `Green`
