@@ -202,6 +202,15 @@ def ProcessOptions(options, document):
         project_dochome = document.userdata.get('project_dochome',
                                                 'https://leanprover-community.github.io/mathlib4_docs')
 
+        if 'project_dochome' not in document.userdata and any(
+                node.userdata.get('leandecls')
+                for graph in document.userdata['dep_graph']['graphs'].values()
+                for node in graph.nodes):
+            log.warning(
+                'Lean declarations found but \\dochome is not set; '
+                'Lean links will point to Mathlib documentation. '
+                'Set \\dochome{URL} to your project documentation root.')
+
         for graph in document.userdata['dep_graph']['graphs'].values():
             nodes = graph.nodes
             for node in nodes:
