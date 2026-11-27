@@ -100,18 +100,19 @@ class LakefileLean(Lakefile):
         """see `super.parse_libs`"""
         libs: List[str] = []
         lib_re = re.compile(r"\s*lean_lib\s*([^ ]*)\b")
-        default_re = re.compile(r"@\[default_target\]")
+        default_re = re.compile(r"\s*@\[default_target\]")
         found_default = False
         with self.path.open("r", encoding="utf8") as lf:
             for line in lf:
-                m = lib_re.match(line)
+                default = default_re.match(line)
+                m = lib_re.match(line, default.end() if default else 0)
                 if m:
                     lib_name = m.group(1).strip("«» ")
-                    if found_default:
+                    if found_default or default:
                         libs.insert(0,lib_name)
                     else:
                         libs.append(lib_name)
-                found_default = bool(default_re.match(line))
+                found_default = bool(default and not m)
         return libs
 
     def add_checkdecls(self) -> None:
@@ -343,7 +344,7 @@ def new() -> None:
     if len(libs) > 1:
         config['lib_name'] = ask(
             "Lean library name", choices=libs, default=libs[0])
-    else:
+    elif libs:
         config['lib_name'] = libs[0]
     config['author'] = ask(
         "Author ([info]use \\and to separate authors if needed[/])", default=name)
