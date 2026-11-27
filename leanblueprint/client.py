@@ -444,7 +444,9 @@ def new() -> None:
             f"GitHub workflow file created at {path/'blueprint.yml'}")
         workflow_files.append(path/'blueprint.yml')
 
-    files_to_add = [out_dir, lakefile.path, manifest_path] + workflow_files
+    files_to_add = [out_dir, lakefile.path] + workflow_files
+    if manifest_path.is_file():
+        files_to_add.append(manifest_path)
 
     if home_page_created:
         files_to_add.append(jekyll_out_dir)
